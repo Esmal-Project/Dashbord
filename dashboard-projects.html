@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>داشبورد پروژه‌های ساختمانی</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { background: #191919; color: #e3e3e3; min-height: 100vh; padding-bottom: 80px; -webkit-text-size-adjust: 100%; }
+    .container { max-width: 920px; margin: 0 auto; padding: 16px; }
+
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .back-btn { background: none; border: none; color: #9b9b9b; font-size: 28px; cursor: pointer; padding: 4px 10px; line-height: 1; }
+    .title { font-size: 18px; font-weight: 600; color: #fff; }
+    .subtitle { font-size: 12px; color: #9b9b9b; margin-top: 2px; }
+
+    .breadcrumb { font-size: 13px; color: #9b9b9b; margin-bottom: 16px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .breadcrumb span { cursor: pointer; }
+    .breadcrumb .current { color: #e3e3e3; cursor: default; }
+
+    .instructions { background: #252525; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; font-size: 13px; color: #cfcfcf; line-height: 1.7; }
+    .instructions li { list-style: none; position: relative; padding-right: 14px; margin-bottom: 2px; }
+    .instructions li::before { content: "•"; position: absolute; right: 0; color: #888; }
+
+    .list { display: flex; flex-direction: column; gap: 8px; }
+    .card {
+      background: #202020;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 14px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .card:active { background: #2a2a2a; }
+    .card-left { display: flex; align-items: center; gap: 12px; }
+    .card-icon { font-size: 20px; }
+    .card-title { font-size: 15px; font-weight: 500; }
+    .card-meta { font-size: 12px; color: #9b9b9b; margin-top: 2px; }
+    .badge { background: #1e3a2f; color: #4ade80; font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 500; }
+    .count { background: #333; color: #ccc; font-size: 12px; padding: 2px 8px; border-radius: 10px; }
+
+    .entry {
+      background: #202020;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .entry-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 10px; }
+    .entry-date { font-size: 12px; color: #9b9b9b; white-space: nowrap; }
+    .entry-type { font-size: 14px; font-weight: 600; color: #fff; }
+    .entry-row { font-size: 13px; margin-bottom: 4px; color: #ccc; }
+    .entry-row strong { color: #e3e3e3; }
+    .item-box { background: #2a2a2a; border-radius: 8px; padding: 10px 12px; margin-top: 10px; }
+    .item-title { font-weight: 500; margin-bottom: 4px; }
+    .item-detail { font-size: 12px; color: #aaa; line-height: 1.5; }
+
+    .empty { text-align: center; padding: 50px 20px; color: #777; font-size: 14px; }
+    .empty-icon { font-size: 36px; margin-bottom: 12px; }
+
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #1f1f1f; border-top: 1px solid #333;
+      padding: 10px 16px; display: flex; align-items: center; gap: 12px;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+    .ask-ai {
+      flex: 1; background: #2a2a2a; border-radius: 20px;
+      padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+      color: #9b9b9b; font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <button class="back-btn" id="backBtn" onclick="goBack()" style="display:none;">‹</button>
+        <div>
+          <div class="title" id="pageTitle">داشبورد پروژه‌های ساختمانی</div>
+          <div class="subtitle" id="pageSubtitle">Private</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="breadcrumb" id="breadcrumb"></div>
+
+    <div class="instructions" id="instructions">
+      <ul>
+        <li>هر چیزی را اول به «پروژه» وصل کن.</li>
+        <li>برای عکس‌ها/فایل‌ها از ستون «فایل‌ها» استفاده کن.</li>
+      </ul>
+    </div>
+
+    <div id="content"></div>
+  </div>
+
+  <div class="bottom-bar">
+    <div style="font-size:20px; color:#9b9b9b;">☰</div>
+    <div class="ask-ai">
+      <span>✨</span>
+      <span>Ask AI</span>
+    </div>
+    <div style="font-size:20px; color:#9b9b9b;">✏️</div>
+  </div>
+
+  <script>
+    const data = {
+      projects: [
+        { id: "qonqa", name: "قونقا", status: "OPEN", sections: { "انبار": [], "خرید": [], "کارها": [] } },
+        { id: "laleh", name: "لاله", status: "OPEN", sections: { "انبار": [], "خرید": [], "کارها": [] } },
+        { id: "hamayesh", name: "همایش‌ها", status: "OPEN", sections: { "انبار": [], "خرید": [], "کارها": [] } },
+        { id: "qotb", name: "قطب", status: "OPEN", sections: { "انبار": [], "خرید": [], "کارها": [] } },
+        {
+          id: "khavaran",
+          name: "خاوران",
+          status: "OPEN",
+          sections: {
+            "انبار": [
+              {
+                date: "۱۴۰۵/۰۵/۲۵",
+                type: "حواله خروج انبار",
+                company: "مجمع فولاد و بتن سهند (F&B.S.CO)",
+                workshop: "باغ فردوس (سیال سازه زرین) - آقای مهندس اسماعیلی",
+                driver: "آقای کریم عباس زاده (جرثقیل ۹۱۱ سهند بتن)",
+                items: [
+                  {
+                    code: "592*592",
+                    name: "کاشی ایتزا",
+                    quality: "نو",
+                    quantity: 135,
+                    unit: "مترمربع",
+                    description: "۹۶ بسته ۴ تایی (۳ پالت)"
+                  }
+                ],
+                note: "اموال سیال سازه زرین"
+              }
+            ],
+            "خرید": [],
+            "کارها": [
+              { date: "۱۴۰۵/۰۵/۲۵", title: "اجرای نرده راه پله", status: "OPEN" },
+              { date: "۱۴۰۵/۰۵/۲۵", title: "کاشی کاری لابی", status: "OPEN" },
+              { date: "۱۴۰۵/۰۵/۲۵", title: "ورودی جلوی آسانسور", status: "OPEN" },
+              { date: "۱۴۰۵/۰۵/۲۵", title: "راه اندازی آسانسور", status: "OPEN" },
+              { date: "۱۴۰۵/۰۵/۲۵", title: "سقف کاذب پارکینگ", status: "OPEN" },
+              { date: "۱۴۰۵/۰۵/۲۵", title: "نصبیات برقی", status: "OPEN" },
+              { date: "۱۴۰۵/۰۵/۲۵", title: "کف حیاط", status: "OPEN" },
+              { date: "۱۴۰۵/۰۵/۲۵", title: "کف پارکینگ", status: "OPEN" },
+              { date: "۱۴۰۵/۰۵/۲۵", title: "اصلاحیه وال مش", status: "OPEN" }
+            ]
+          }
+        },
+        { id: "bagh-ferdows", name: "باغ فردوس", status: "OPEN", sections: { "انبار": [], "خرید": [], "کارها": [] } },
+        { id: "gazran", name: "گازران", status: "OPEN", sections: { "انبار": [], "خرید": [], "کارها": [] } }
+      ]
+    };
+
+    let currentView = "home";
+    let currentProjectId = null;
+    let currentSection = null;
+
+    function render() {
+      const content = document.getElementById("content");
+      const title = document.getElementById("pageTitle");
+      const subtitle = document.getElementById("pageSubtitle");
+      const backBtn = document.getElementById("backBtn");
+      const instructions = document.getElementById("instructions");
+      const breadcrumb = document.getElementById("breadcrumb");
+
+      content.innerHTML = "";
+      breadcrumb.innerHTML = "";
+
+      if (currentView === "home") {
+        backBtn.style.display = "none";
+        instructions.style.display = "block";
+        title.textContent = "داشبورد پروژه‌های ساختمانی";
+        subtitle.textContent = "Private";
+
+        let html = '<div class="list">';
+        data.projects.forEach(function(p) {
+          var totalItems = 0;
+          Object.keys(p.sections).forEach(function(k) {
+            totalItems += p.sections[k].length;
+          });
+          html += '<div class="card" onclick="openProject(\\'' + p.id + '\\')">';
+          html += '<div class="card-left"><div class="card-icon">🏢</div><div>';
+          html += '<div class="card-title">' + p.name + '</div>';
+          html += '<div class="card-meta">' + totalItems + ' مورد ثبت‌شده</div>';
+          html += '</div></div>';
+          html += '<div style="display:flex;align-items:center;gap:8px;"><span class="badge">' + p.status + '</span><span style="color:#666;">›</span></div>';
+          html += '</div>';
+        });
+        html += '</div>';
+        content.innerHTML = html;
+      }
+
+      else if (currentView === "project") {
+        var project = null;
+        for (var i = 0; i < data.projects.length; i++) {
+          if (data.projects[i].id === currentProjectId) { project = data.projects[i]; break; }
+        }
+        backBtn.style.display = "block";
+        instructions.style.display = "none";
+        title.textContent = project.name;
+        subtitle.textContent = "پروژه";
+
+        breadcrumb.innerHTML = '<span onclick="goHome()">داشبورد</span><span>›</span><span class="current">' + project.name + '</span>';
+
+        var html = '<div class="list">';
+        var sectionNames = Object.keys(project.sections);
+        for (var s = 0; s < sectionNames.length; s++) {
+          var sectionName = sectionNames[s];
+          var items = project.sections[sectionName];
+          var icon = sectionName === "انبار" ? "📦" : (sectionName === "خرید" ? "🛒" : "✅");
+          html += '<div class="card" onclick="openSection(\\'' + sectionName + '\\')">';
+          html += '<div class="card-left"><div class="card-icon">' + icon + '</div><div>';
+          html += '<div class="card-title">' + sectionName + '</div>';
+          html += '<div class="card-meta">' + items.length + ' مورد</div>';
+          html += '</div></div>';
+          html += '<div style="display:flex;align-items:center;gap:8px;"><span class="count">' + items.length + '</span><span style="color:#666;">›</span></div>';
+          html += '</div>';
+        }
+        html += '</div>';
+        content.innerHTML = html;
+      }
+
+      else if (currentView === "section") {
+        var project = null;
+        for (var i = 0; i < data.projects.length; i++) {
+          if (data.projects[i].id === currentProjectId) { project = data.projects[i]; break; }
+        }
+        var items = project.sections[currentSection] || [];
+        backBtn.style.display = "block";
+        instructions.style.display = "none";
+        title.textContent = currentSection;
+        subtitle.textContent = project.name;
+
+        breadcrumb.innerHTML = '<span onclick="goHome()">داشبورد</span><span>›</span><span onclick="openProject(\\'' + currentProjectId + '\\')">' + project.name + '</span><span>›</span><span class="current">' + currentSection + '</span>';
+
+        if (items.length === 0) {
+          content.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div>هنوز چیزی در این قسمت ثبت نشده</div></div>';
+        } else {
+          var html = "";
+          for (var j = 0; j < items.length; j++) {
+            var item = items[j];
+            if (item.title) {
+              html += '<div class="entry">';
+              html += '<div class="entry-header"><div class="entry-type">' + item.title + '</div><div class="entry-date">' + item.date + '</div></div>';
+              html += '<div class="entry-row"><strong>وضعیت:</strong> ' + (item.status || "OPEN") + '</div>';
+              html += '</div>';
+            } else {
+              html += '<div class="entry">';
+              html += '<div class="entry-header"><div class="entry-type">' + (item.type || "مورد ثبت‌شده") + '</div><div class="entry-date">' + item.date + '</div></div>';
+              if (item.company) html += '<div class="entry-row"><strong>شرکت:</strong> ' + item.company + '</div>';
+              if (item.workshop) html += '<div class="entry-row"><strong>کارگاه:</strong> ' + item.workshop + '</div>';
+              if (item.driver) html += '<div class="entry-row"><strong>راننده:</strong> ' + item.driver + '</div>';
+              if (item.note) html += '<div class="entry-row"><strong>یادداشت:</strong> ' + item.note + '</div>';
+              if (item.items && item.items.length) {
+                for (var k = 0; k < item.items.length; k++) {
+                  var it = item.items[k];
+                  html += '<div class="item-box">';
+                  html += '<div class="item-title">' + it.name + (it.code ? ' (' + it.code + ')' : '') + '</div>';
+                  html += '<div class="item-detail">مقدار: ' + it.quantity + ' ' + it.unit + ' | کیفیت: ' + (it.quality || "-");
+                  if (it.description) html += '<br>' + it.description;
+                  html += '</div></div>';
+                }
+              }
+              html += '</div>';
+            }
+          }
+          content.innerHTML = html;
+        }
+      }
+    }
+
+    function goHome() {
+      currentView = "home";
+      currentProjectId = null;
+      currentSection = null;
+      render();
+    }
+
+    function openProject(id) {
+      currentView = "project";
+      currentProjectId = id;
+      currentSection = null;
+      render();
+    }
+
+    function openSection(sectionName) {
+      currentView = "section";
+      currentSection = sectionName;
+      render();
+    }
+
+    function goBack() {
+      if (currentView === "section") {
+        openProject(currentProjectId);
+      } else if (currentView === "project") {
+        goHome();
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
