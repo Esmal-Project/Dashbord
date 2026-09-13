@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>بورس‌مگ | داشبورد هوشمند بازار سرمایه</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #111827;
+      --bg-card: #1a1f2e;
+      --bg-card-hover: #222940;
+      --border: #2a3146;
+      --text-primary: #f0f4fc;
+      --text-secondary: #8892a8;
+      --text-muted: #5a6478;
+      --green: #00d68f;
+      --green-light: #00ffaa;
+      --green-bg: rgba(0, 214, 143, 0.1);
+      --red: #ff4757;
+      --red-light: #ff6b81;
+      --red-bg: rgba(255, 71, 87, 0.1);
+      --blue: #4f8cff;
+      --blue-bg: rgba(79, 140, 255, 0.1);
+      --yellow: #ffc048;
+      --yellow-bg: rgba(255, 192, 72, 0.1);
+      --purple: #a855f7;
+      --purple-bg: rgba(168, 85, 247, 0.1);
+      --gradient-green: linear-gradient(135deg, #00d68f, #00b87c);
+      --gradient-blue: linear-gradient(135deg, #4f8cff, #2563eb);
+      --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.4);
+      --shadow-glow-green: 0 0 30px rgba(0, 214, 143, 0.15);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --radius-xs: 6px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.7;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Ticker Bar ── */
+    .ticker-bar {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 0;
+      overflow: hidden;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .ticker-track {
+      display: flex;
+      gap: 32px;
+      animation: tickerScroll 40s linear infinite;
+      white-space: nowrap;
+      width: max-content;
+    }
+    .ticker-track:hover { animation-play-state: paused; }
+    @keyframes tickerScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(50%); }
+    }
+    .ticker-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 3px 10px;
+      border-radius: 16px;
+      transition: background 0.2s;
+    }
+    .ticker-item:hover { background: var(--bg-card); }
+    .ticker-symbol { font-weight: 700; color: var(--text-primary); }
+    .ticker-price { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+    .ticker-change { font-weight: 600; font-size: 11px; padding: 1px 6px; border-radius: 8px; font-variant-numeric: tabular-nums; }
+    .ticker-change.up { color: var(--green); background: var(--green-bg); }
+    .ticker-change.down { color: var(--red); background: var(--red-bg); }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 36px;
+      z-index: 99;
+      gap: 16px;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .nav-logo {
+      width: 38px; height: 38px;
+      background: var(--gradient-green);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 900; color: #0a0e17;
+    }
+    .nav-title {
+      font-size: 18px; font-weight: 800;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    /* ── Search ── */
+    .search-box {
+      flex: 1;
+      max-width: 480px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-box input::placeholder { color: var(--text-muted); }
+    .search-box input:focus { border-color: var(--blue); }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 14px;
+      pointer-events: none;
+    }
+    .search-results {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      left: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-top: 4px;
+      max-height: 320px;
+      overflow-y: auto;
+      z-index: 200;
+      display: none;
+      box-shadow: var(--shadow-lg);
+    }
+    .search-results.active { display: block; }
+    .search-result-item {
+      padding: 10px 16px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(42,49,70,0.4);
+      transition: background 0.15s;
+    }
+    .search-result-item:hover { background: var(--bg-card-hover); }
+    .search-result-item:last-child { border-bottom: none; }
+    .sr-name { font-size: 13px; font-weight: 600; }
+    .sr-symbol { font-size: 11px; color: var(--text-muted); }
+    .sr-badge {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      background: var(--blue-bg);
+      color: var(--blue);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 4px;
+      list-style: none;
+      flex-shrink: 0;
+    }
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: var(--radius-xs);
+      transition: all 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--text-primary); background: var(--bg-card); }
+
+    /* ── Hero ── */
+    .hero { padding: 32px 32px 16px; max-width: 1440px; margin: 0 auto; }
+    .hero-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; }
+    .hero-title { font-size: 28px; font-weight: 900; }
+    .hero-title span {
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-subtitle { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+    .hero-time { text-align: left; }
+    .hero-time .time-label { font-size: 12px; color: var(--text-muted); }
+    .hero-time .time-val {
+      font-size: 22px; font-weight: 700; color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    .live-dot {
+      display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green); margin-left: 4px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* ── Status Bar ── */
+    .status-bar {
+      display: flex; align-items: center; gap: 16px;
+      padding: 8px 16px; border-radius: var(--radius-xs);
+      margin-bottom: 24px; font-size: 12px;
+    }
+    .status-bar.connected { background: var(--green-bg); color: var(--green); border: 1px solid rgba(0,214,143,0.2); }
+    .status-bar.error { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,71,87,0.2); }
+    .status-bar.loading { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(255,192,72,0.2); }
+
+    /* ── Index Cards ── */
+    .indices-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .index-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .index-card::before {
+      content: '';
+      position: absolute; top: 0; right: 0;
+      width: 100%; height: 3px;
+    }
+    .index-card.up::before { background: var(--gradient-green); }
+    .index-card.down::before { background: linear-gradient(135deg, var(--red), #e8293a); }
+    .index-card:hover { transform: translateY(-3px); border-color: var(--text-muted); box-shadow: var(--shadow-lg); }
+    .ic-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .ic-name { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+    .ic-icon { font-size: 16px; }
+    .ic-value { font-size: 24px; font-weight: 800; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+    .ic-change { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+    .index-card.up .ic-change { color: var(--green); }
+    .index-card.down .ic-change { color: var(--red); }
+    .ic-chart { margin-top: 12px; height: 40px; }
+
+    /* ── Main Grid ── */
+    .main-content {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 32px 48px;
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 20px;
+    }
+
+    /* ── Section Cards ── */
+    .section-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-title {
+      font-size: 15px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title .icon {
+      width: 26px; height: 26px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center; font-size: 13px;
+    }
+    .tab-group {
+      display: flex; gap: 3px;
+      background: var(--bg-primary); padding: 3px; border-radius: var(--radius-xs);
+    }
+    .tab-btn {
+      padding: 5px 12px; border-radius: 4px; border: none;
+      background: transparent; color: var(--text-secondary);
+      font-family: inherit; font-size: 11px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .tab-btn.active { background: var(--bg-card); color: var(--text-primary); }
+
+    /* ── Stock Table ── */
+    .stock-table-header {
+      display: grid;
+      grid-template-columns: 2.5fr 1fr 1fr 1fr 100px;
+      padding: 10px 20px;
+      font-size: 11px; color: var(--text-muted); font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+    .stock-row {
+      display: grid;
+      grid-template-columns: 2.5fr 1fr 1fr 1fr 100px;
+      padding: 12px 20px;
+      align-items: center;
+      border-bottom: 1px solid rgba(42,49,70,0.4);
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+    .stock-row:hover { background: var(--bg-card-hover); }
+    .stock-row:last-child { border-bottom: none; }
+    .stock-name-cell { display: flex; align-items: center; gap: 10px; }
+    .stock-avatar {
+      width: 34px; height: 34px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; flex-shrink: 0;
+    }
+    .stock-avatar.blue { background: var(--blue-bg); color: var(--blue); }
+    .stock-avatar.green { background: var(--green-bg); color: var(--green); }
+    .stock-avatar.red { background: var(--red-bg); color: var(--red); }
+    .stock-avatar.purple { background: var(--purple-bg); color: var(--purple); }
+    .stock-avatar.yellow { background: var(--yellow-bg); color: var(--yellow); }
+    .stock-name { font-weight: 600; font-size: 13px; }
+    .stock-ticker { font-size: 11px; color: var(--text-muted); }
+    .stock-price { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 13px; }
+    .stock-cell { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+    .stock-change-badge {
+      padding: 3px 8px; border-radius: 6px;
+      font-size: 11px; font-weight: 700; text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .stock-change-badge.up { background: var(--green-bg); color: var(--green); }
+    .stock-change-badge.down { background: var(--red-bg); color: var(--red); }
+    .stock-mini-chart { width: 80px; height: 28px; }
+
+    /* ── Selected Symbol Detail ── */
+    .symbol-detail {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .symbol-detail.active { display: block; }
+    .sd-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .sd-title { font-size: 20px; font-weight: 800; }
+    .sd-symbol { font-size: 13px; color: var(--text-muted); }
+    .sd-close {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text-secondary); cursor: pointer; padding: 6px 12px; font-size: 12px;
+      font-family: inherit; transition: all 0.2s;
+    }
+    .sd-close:hover { border-color: var(--red); color: var(--red); }
+    .sd-price-row { display: flex; align-items: baseline; gap: 16px; margin-bottom: 16px; }
+    .sd-last-price { font-size: 36px; font-weight: 900; font-variant-numeric: tabular-nums; }
+    .sd-change { font-size: 16px; font-weight: 700; }
+    .sd-change.up { color: var(--green); }
+    .sd-change.down { color: var(--red); }
+    .sd-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .sd-stat { background: var(--bg-primary); border-radius: var(--radius-xs); padding: 12px; }
+    .sd-stat-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+    .sd-stat-value { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .sd-chart-container { height: 200px; background: var(--bg-primary); border-radius: var(--radius-sm); padding: 12px; }
+    .sd-chart-container canvas { width: 100% !important; height: 100% !important; }
+
+    /* ── Order Book ── */
+    .depth-row {
+      display: grid;
+      grid-template-columns: 60px 1fr 80px;
+      align-items: center;
+      padding: 6px 20px;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      position: relative;
+    }
+    .depth-row .depth-volume { font-weight: 600; z-index: 1; }
+    .depth-row .depth-price { font-weight: 700; z-index: 1; text-align: center; }
+    .depth-row .depth-orders { font-size: 10px; color: var(--text-muted); text-align: left; z-index: 1; }
+    .depth-bar {
+      position: absolute; top: 0; right: 0; bottom: 0; opacity: 0.08;
+    }
+    .depth-row.ask .depth-bar { background: var(--red); }
+    .depth-row.bid .depth-bar { background: var(--green); }
+    .depth-row.ask .depth-price { color: var(--red); }
+    .depth-row.bid .depth-price { color: var(--green); }
+    .depth-separator {
+      padding: 8px 20px; text-align: center;
+      font-size: 16px; font-weight: 800;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-primary);
+    }
+
+    /* ── Sidebar ── */
+    .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+    /* ── News ── */
+    .news-item {
+      display: flex; gap: 12px;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(42,49,70,0.4);
+      cursor: pointer; transition: background 0.15s;
+    }
+    .news-item:hover { background: var(--bg-card-hover); }
+    .news-item:last-child { border-bottom: none; }
+    .news-thumb {
+      width: 56px; height: 56px; border-radius: var(--radius-sm);
+      background: var(--bg-primary); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+    }
+    .news-content { flex: 1; min-width: 0; }
+    .news-title {
+      font-size: 12px; font-weight: 600; line-height: 1.6; margin-bottom: 3px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .news-meta { font-size: 10px; color: var(--text-muted); display: flex; gap: 8px; align-items: center; }
+    .news-tag { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; }
+    .news-tag.urgent { background: var(--red-bg); color: var(--red); }
+    .news-tag.normal { background: var(--blue-bg); color: var(--blue); }
+
+    /* ── Loading ── */
+    .loading-shimmer {
+      background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-xs);
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .empty-state {
+      text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 13px;
+    }
+    .empty-state .icon { font-size: 32px; margin-bottom: 8px; }
+
+    /* ── Footer ── */
+    .footer {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      padding: 32px 32px 20px;
+      margin-top: 48px;
+    }
+    .footer-content {
+      max-width: 1440px; margin: 0 auto;
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 32px;
+      margin-bottom: 24px;
+    }
+    .footer-brand .fb-title {
+      font-size: 18px; font-weight: 800;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 10px;
+    }
+    .footer-brand .fb-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.8; }
+    .footer-col h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+    .footer-col a {
+      display: block; font-size: 12px; color: var(--text-secondary);
+      text-decoration: none; padding: 3px 0; transition: color 0.2s;
+    }
+    .footer-col a:hover { color: var(--green); }
+    .footer-bottom {
+      max-width: 1440px; margin: 0 auto;
+      padding-top: 20px; border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 11px; color: var(--text-muted);
+    }
+
+    /* ── Fade In ── */
+    .fade-in { opacity: 0; transform: translateY(12px); animation: fadeIn 0.4s forwards; }
+    @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Responsive ── */
+    @media (max-width: 1024px) {
+      .indices-grid { grid-template-columns: repeat(2, 1fr); }
+      .main-content { grid-template-columns: 1fr; }
+      .footer-content { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .indices-grid { grid-template-columns: 1fr; }
+      .navbar { padding: 10px 16px; flex-wrap: wrap; }
+      .hero { padding: 20px 16px 12px; }
+      .hero-title { font-size: 22px; }
+      .nav-links { display: none; }
+      .main-content { padding: 0 16px 32px; }
+      .sd-grid { grid-template-columns: repeat(2, 1fr); }
+      .footer-content { grid-template-columns: 1fr; gap: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ticker Bar -->
+  <div class="ticker-bar">
+    <div class="ticker-track" id="tickerTrack">
+      <div class="ticker-item"><span class="ticker-price" style="color:var(--text-muted);">⏳ در حال بارگذاری داده‌های بازار...</span></div>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="nav-logo">ب</div>
+      <div class="nav-title">بورس‌مگ</div>
+    </div>
+
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="جستجوی نماد... (مثلاً فولاد، فملی، خودرو)" autocomplete="off" />
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <ul class="nav-links">
+      <li><a href="#" class="active">داشبورد</a></li>
+      <li><a href="#">تحلیل</a></li>
+      <li><a href="#">اخبار</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-top">
+      <div>
+        <h1 class="hero-title">بازار <span>سرمایه</span> ایران</h1>
+        <p class="hero-subtitle">داده‌های لحظه‌ای از سایت سازمان بورس و اوراق بهادار</p>
+      </div>
+      <div class="hero-time">
+        <div class="time-label">ساعت <span class="live-dot"></span></div>
+        <div class="time-val" id="liveTime">--:--:--</div>
+        <span id="dataSourceBadge" style="display:none;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-top:4px;display:inline-block;"></span>
+      </div>
+    </div>
+    <div id="connectionStatus" class="status-bar loading">⏳ در حال اتصال به سرور داده...</div>
+
+    <!-- Index Cards -->
+    <div class="indices-header" style="margin-bottom:12px;">
+      <div class="section-title" style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;">
+        <span class="icon" style="width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;background:var(--green-bg);color:var(--green);">🏦</span>
+        <span id="indicesTitle">بازار در یک نگاه</span>
+      </div>
+    </div>
+    <div class="indices-grid" id="indicesGrid">
+      <div class="index-card up"><div class="loading-shimmer" style="height:100px;"></div></div>
+      <div class="index-card down"><div class="loading-shimmer" style="height:100px;"></div></div>
+      <div class="index-card up"><div class="loading-shimmer" style="height:100px;"></div></div>
+      <div class="index-card down"><div class="loading-shimmer" style="height:100px;"></div></div>
+    </div>
+  </section>
+
+  <!-- Symbol Detail (hidden by default) -->
+  <div style="max-width:1440px;margin:0 auto;padding:0 32px;">
+    <div class="symbol-detail" id="symbolDetail"></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Stock Table -->
+    <div class="section-card fade-in">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="icon" style="background:var(--blue-bg);color:var(--blue);">📈</span>
+          <span id="tableTitle">برترین سهام امروز</span>
+        </div>
+        <div class="tab-group">
+          <button class="tab-btn active" data-tab="gainers" onclick="switchTab(this)">پربازده‌ها</button>
+          <button class="tab-btn" data-tab="losers" onclick="switchTab(this)">پرضررها</button>
+          <button class="tab-btn" data-tab="active" onclick="switchTab(this)">فعال‌ترین‌ها</button>
+        </div>
+      </div>
+      <div class="stock-table-header">
+        <span>نماد</span>
+        <span>قیمت</span>
+        <span>تغییرات</span>
+        <span>حجم</span>
+        <span>نمودار</span>
+      </div>
+      <div id="stockList">
+        <div class="empty-state"><div class="icon">⏳</div><div>در حال دریافت اطلاعات بازار...</div></div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Order Book -->
+      <div class="section-card fade-in" style="animation-delay:0.1s;">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="icon" style="background:var(--green-bg);color:var(--green);">📊</span>
+            عمق بازار
+          </div>
+          <div id="depthTitle" style="font-size:11px;color:var(--text-muted);">انتخاب نماد</div>
+        </div>
+        <div id="marketDepth">
+          <div class="empty-state"><div class="icon">📋</div><div>یک نماد را انتخاب کنید</div></div>
+        </div>
+      </div>
+
+      <!-- Money Flow -->
+      <div class="section-card fade-in" style="animation-delay:0.15s;">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="icon" style="background:var(--purple-bg);color:var(--purple);">💰</span>
+            جریان ورود/خروج پول
+          </div>
+        </div>
+        <div id="moneyFlow">
+          <div class="empty-state"><div class="icon">💡</div><div>یک نماد را انتخاب کنید</div></div>
+        </div>
+      </div>
+
+      <!-- News -->
+      <div class="section-card fade-in" style="animation-delay:0.2s;">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="icon" style="background:var(--yellow-bg);color:var(--yellow);">📰</span>
+            اخبار بازار
+          </div>
+        </div>
+        <div id="newsList">
+          <div class="news-item"><div class="news-thumb">📊</div><div class="news-content">
+            <div class="news-title">در حال دریافت اخبار کدال...</div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <div class="fb-title">بورس‌مگ</div>
+        <p class="fb-desc">پلتفرم هوشمند رصد بازار سرمایه ایران. داده‌های لحظه‌ای از سایت سازمان بورس و اوراق بهادار (TSETMC).</p>
+      </div>
+      <div class="footer-col">
+        <h4>بازار</h4><a href="#">شاخص کل</a><a href="#">شاخص هم‌وزن</a><a href="#">شاخص فرابورس</a>
+      </div>
+      <div class="footer-col">
+        <h4>ابزارها</h4><a href="#">فیلتر هوشمند</a><a href="#">تحلیل تکنیکال</a><a href="#">هشدار قیمتی</a>
+      </div>
+      <div class="footer-col">
+        <h4>پشتیبانی</h4><a href="#">تماس با ما</a><a href="#">سوالات متداول</a><a href="#">حریم خصوصی</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© ۱۴۰۵ بورس‌مگ — داده از TSETMC</span>
+      <span id="lastUpdate">آخرین به‌روزرسانی: --</span>
+    </div>
+  </footer>
+
+  <script>
+    // ══════════════════════════════════════════
+    //  BourseMag — Live Data Engine
+    // ══════════════════════════════════════════
+
+    const API = '';  // same origin
+    let API_SUFFIX = '';  // '' on the Node proxy, '.json' on static hosting (GitHub Pages)
+    let allSymbols = [];       // full market watch data
+    let selectedInsCode = null;
+    let refreshInterval = null;
+    let searchTimeout = null;
+
+    // ── Known index instrument codes ──
+    const INDEX_CODES = {
+      '32097828799138957': { name: 'شاخص کل', icon: '🏦' },
+      '32097828820363860': { name: 'شاخص کل', icon: '🏦' },
+      '67130298613737946': { name: 'شاخص هم‌وزن', icon: '⚖️' },
+    };
+
+    async function fetchIndices() {
+      return apiFetch('/api/indices');
+    }
+
+    // ── API Calls ──
+    async function apiFetch(path) {
+      // Node proxy serves /api/x — static hosting (GitHub Pages) serves api/x.json
+      const rel = path.replace(/^\/api\//, 'api/');
+      let url = rel + API_SUFFIX;
+      let res = await fetch(url);
+      if (API_SUFFIX === '' && !res.ok) {
+        API_SUFFIX = '.json';
+        url = rel + API_SUFFIX;
+        res = await fetch(url);
+      }
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      return res.json();
+    }
+
+    async function fetchMarketWatch() {
+      const data = await apiFetch('/api/market-watch');
+      // data.marketwatch is the array
+      allSymbols = data.marketwatch || data.closingPriceInfo || [];
+      lastMeta = data.meta || null;
+      return allSymbols;
+    }
+
+    let lastMeta = null;
+
+    // Data-source badge: live / cached / demo
+    function updateSourceBadge() {
+      const badge = document.getElementById('dataSourceBadge');
+      if (!badge) return;
+      if (!lastMeta) { badge.style.display = 'none'; return; }
+      badge.style.display = 'inline-block';
+      if (lastMeta.source === 'live') {
+        badge.textContent = '● داده زنده';
+        badge.style.background = 'var(--green-bg)';
+        badge.style.color = 'var(--green)';
+      } else if (lastMeta.source === 'cache') {
+        badge.textContent = '● آخرین داده ذخیره‌شده';
+        badge.style.background = 'var(--yellow-bg)';
+        badge.style.color = 'var(--yellow)';
+      } else if (lastMeta.source === 'live-snapshot') {
+        badge.textContent = '● داده واقعی (به‌روزرسانی 15 دقیقه‌ای)';
+        badge.style.background = 'var(--green-bg)';
+        badge.style.color = 'var(--green)';
+        } else if (lastMeta.source === 'seed') {
+        badge.textContent = '● حالت نمایشی (دمو)';
+        badge.style.background = 'var(--purple-bg)';
+        badge.style.color = 'var(--purple)';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    // Retry countdown while disconnected
+    let retryTimer = null;
+    function startRetryCountdown(seconds) {
+      clearInterval(retryTimer);
+      let left = seconds;
+      retryTimer = setInterval(() => {
+        left--;
+        const el = document.getElementById('connectionStatus');
+        if (el && el.classList.contains('error')) {
+          el.textContent = `❌ قطع ارتباط با منبع داده — تلاش مجدد تا ${left} ثانیه دیگر`;
+        }
+        if (left <= 0) { clearInterval(retryTimer); loadMarketData(); }
+      }, 1000);
+    }
+
+    async function fetchQuote(insCode) {
+      return apiFetch(`/api/quote/${insCode}`);
+    }
+
+    async function fetchOrderBook(insCode) {
+      return apiFetch(`/api/orderbook/${insCode}`);
+    }
+
+    async function fetchClientType(insCode) {
+      return apiFetch(`/api/client-type/${insCode}`);
+    }
+
+    async function fetchSearch(query) {
+      return apiFetch(`/api/search/${encodeURIComponent(query)}`);
+    }
+
+    async function fetchDailyHistory(insCode) {
+      return apiFetch(`/api/daily/${insCode}/30`);
+    }
+
+    // ── Helpers ──
+    function fmt(n) {
+      if (n == null) return '--';
+      return Number(n).toLocaleString('fa-IR');
+    }
+    function fmtRial(n) {
+      if (n == null) return '--';
+      return Number(n).toLocaleString('fa-IR');
+    }
+    function fmtVolume(n) {
+      if (n == null) return '--';
+      const v = Number(n);
+      if (v >= 1e9) return (v / 1e9).toFixed(1) + ' میلیارد';
+      if (v >= 1e6) return (v / 1e6).toFixed(1) + ' میلیون';
+      if (v >= 1e3) return (v / 1e3).toFixed(1) + ' هزار';
+      return v.toLocaleString('fa-IR');
+    }
+    function changePct(last, prev) {
+      if (!last || !prev) return 0;
+      return ((last - prev) / prev) * 100;
+    }
+
+    // ── Connection Status ──
+    function setStatus(type, msg) {
+      const el = document.getElementById('connectionStatus');
+      el.className = 'status-bar ' + type;
+      el.textContent = msg;
+    }
+
+    // ── Render Ticker ──
+    function renderTicker(symbols) {
+      const track = document.getElementById('tickerTrack');
+      // Pick top 20 by absolute change
+      const sorted = [...symbols]
+        .filter(s => s.pClosing && s.pClosing > 0)
+        .sort((a, b) => Math.abs(changePct(b.pClosing, b.priceYesterday)) - Math.abs(changePct(a.pClosing, a.priceYesterday)))
+        .slice(0, 30);
+
+      const items = sorted.map(s => {
+        const pct = changePct(s.pClosing, s.priceYesterday);
+        const isUp = pct >= 0;
+        return `<div class="ticker-item" onclick="selectSymbol(${s.insCode})">
+          <span class="ticker-symbol">${s.lVal18AFC || s.lVal30 || '?'}</span>
+          <span class="ticker-price">${fmtRial(s.pClosing)}</span>
+          <span class="ticker-change ${isUp ? 'up' : 'down'}">${isUp ? '▲' : '▼'} ${Math.abs(pct).toFixed(1)}%</span>
+        </div>`;
+      }).join('');
+
+      track.innerHTML = items + items; // duplicate for seamless scroll
+    }
+
+    // ── Render Indices ──
+    function renderIndices(indices, symbols) {
+      const grid = document.getElementById('indicesGrid');
+
+      // Primary: real index values from /api/indices
+      let cards = (indices || [])
+        .filter(x => x.value > 0)
+        .sort((a, b) => Math.abs(b.changePct || 0) - Math.abs(a.changePct || 0))
+        .slice(0, 4);
+
+      // Fallback: biggest traded symbols of the day (real data, honest label)
+      let fallbackMode = false;
+      if (cards.length === 0) {
+        fallbackMode = true;
+        cards = [...(symbols || [])]
+          .filter(s => s.pClosing > 0 && (s.qTotCap || 0) > 0)
+          .sort((a, b) => (b.qTotCap || 0) - (a.qTotCap || 0))
+          .slice(0, 4)
+          .map(s => ({
+            name: s.lVal30 || s.lVal18AFC,
+            value: s.pClosing,
+            changePct: changePct(s.pClosing, s.priceYesterday),
+            changeAbs: s.pClosing - (s.priceYesterday || 0),
+            insCode: s.insCode,
+          }));
+      }
+
+      if (cards.length === 0) {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="icon">📊</div><div>داده‌ای یافت نشد</div></div>';
+        return;
+      }
+
+      if (fallbackMode) {
+        const title = document.getElementById('indicesTitle');
+        if (title) title.textContent = 'بزرگ‌ترین معاملات امروز';
+      }
+
+      grid.innerHTML = cards.map((s, i) => {
+        const pct = s.changePct || 0;
+        const isUp = pct >= 0;
+        const known = INDEX_CODES[String(s.insCode)] || {};
+        const name = known.name || s.name || 'نامشخص';
+        const icon = known.icon || '📊';
+
+        return `<div class="index-card ${isUp ? 'up' : 'down'} fade-in" style="animation-delay:${i * 0.06}s"
+                     onclick="selectSymbol(${s.insCode})">
+          <div class="ic-header">
+            <span class="ic-name">${name}</span>
+            <span class="ic-icon">${icon}</span>
+          </div>
+          <div class="ic-value">${fmtRial(s.value)}</div>
+          <div class="ic-change">
+            <span>${isUp ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%</span>
+            <span style="font-size:11px;color:var(--text-muted);font-weight:400">${fmtRial(Math.abs(s.changeAbs || 0))} واحد</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Render Stock Table ──
+    function renderStockTable(symbols, tab) {
+      const list = document.getElementById('stockList');
+      let filtered = [...symbols].filter(s => s.pClosing > 0 && s.lVal18AFC);
+
+      if (tab === 'gainers') {
+        filtered.sort((a, b) => changePct(b.pClosing, b.priceYesterday) - changePct(a.pClosing, a.priceYesterday));
+        filtered = filtered.slice(0, 20);
+        document.getElementById('tableTitle').textContent = 'پربازده‌ترین نمادها';
+      } else if (tab === 'losers') {
+        filtered.sort((a, b) => changePct(a.pClosing, a.priceYesterday) - changePct(b.pClosing, b.priceYesterday));
+        filtered = filtered.slice(0, 20);
+        document.getElementById('tableTitle').textContent = 'پرضررترین نمادها';
+      } else {
+        filtered.sort((a, b) => (b.zTotTran || 0) - (a.zTotTran || 0));
+        filtered = filtered.slice(0, 20);
+        document.getElementById('tableTitle').textContent = 'فعال‌ترین نمادها';
+      }
+
+      const colors = ['blue', 'green', 'red', 'purple', 'yellow'];
+
+      list.innerHTML = filtered.map((s, i) => {
+        const last = s.pClosing || s.pDrCotVal || 0;
+        const prev = s.priceYesterday || 0;
+        const pct = changePct(last, prev);
+        const isUp = pct >= 0;
+        const sym = s.lVal18AFC || '?';
+        const name = s.lVal30 || sym;
+        const color = colors[i % colors.length];
+
+        return `<div class="stock-row" onclick="selectSymbol(${s.insCode})">
+          <div class="stock-name-cell">
+            <div class="stock-avatar ${color}">${sym.charAt(0)}</div>
+            <div>
+              <div class="stock-name">${name}</div>
+              <div class="stock-ticker">${sym}</div>
+            </div>
+          </div>
+          <div class="stock-price">${fmtRial(last)}</div>
+          <div class="stock-change-badge ${isUp ? 'up' : 'down'}">${isUp ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%</div>
+          <div class="stock-cell">${fmtVolume(s.qTotTran5J)}</div>
+          <div><canvas class="stock-mini-chart" width="80" height="28" data-last="${last}" data-prev="${prev}"></canvas></div>
+        </div>`;
+      }).join('');
+
+      // Draw mini sparklines
+      list.querySelectorAll('.stock-mini-chart').forEach(c => {
+        const last = parseFloat(c.dataset.last);
+        const prev = parseFloat(c.dataset.prev);
+        drawSparkline(c, last, prev);
+      });
+    }
+
+    // ── Draw Mini Sparkline (honest: bars sized by % change vs yesterday) ──
+    function drawSparkline(canvas, last, prev) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      if (!last || !prev) return;
+      const pct = changePct(last, prev);           // e.g. +3.4 means +3.4% (typical daily range)
+      const isUp = pct >= 0;
+      const color = isUp ? '#00d68f' : '#ff4757';
+
+      // 6 bars growing toward the % change; clamped to ±7% (daily price limit)
+      const bars = 6;
+      const mag = Math.min(Math.abs(pct) / 7, 1);  // 0..1
+      const bw = Math.max(2, Math.floor(w / bars) - 3);
+      const gap = Math.floor((w - bars * bw) / (bars - 1 || 1));
+
+      for (let i = 0; i < bars; i++) {
+        const frac = (i + 1) / bars;
+        const bh = Math.max(2, Math.round(frac * mag * (h - 4)));
+        const x = w - (bw + (bw + gap) * i) + gap;
+        const y = h - bh;
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.25 + frac * 0.75;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, bw, bh, 2);
+        else ctx.rect(x, y, bw, bh);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // ── Select Symbol ──
+    async function selectSymbol(insCode) {
+      selectedInsCode = insCode;
+      const detail = document.getElementById('symbolDetail');
+      detail.classList.add('active');
+      detail.innerHTML = '<div class="loading-shimmer" style="height:200px;"></div>';
+
+      try {
+        const [quoteData, orderData, clientData, dailyData] = await Promise.all([
+          fetchQuote(insCode).catch(() => null),
+          fetchOrderBook(insCode).catch(() => null),
+          fetchClientType(insCode).catch(() => null),
+          fetchDailyHistory(insCode).catch(() => null),
+        ]);
+
+        let q = quoteData?.closingPriceInfo;
+        if (!q) {
+          // Static-mode fallback: build the quote card from the market-watch row
+          const row = allSymbols.find(s => String(s.insCode) === String(insCode));
+          if (row) {
+            q = { insCode: row.insCode, lVal18AFC: row.lVal18AFC, lVal30: row.lVal30, cValMne: row.lVal18AFC,
+              pClosing: row.pClosing, pDrCotVal: row.pDrCotVal, priceYesterday: row.priceYesterday,
+              priceFirst: row.priceFirst, priceMin: row.priceMin, priceMax: row.priceMax,
+              qTotTran5J: row.qTotTran5J, qTotCap: row.qTotCap, zTotTran: row.zTotTran, baseVol: row.baseVol };
+          }
+        }
+        if (!q) {
+          detail.innerHTML = '<div class="empty-state">اطلاعات یافت نشد</div>';
+          return;
+        }
+
+        const last = q.pClosing || q.pDrCotVal || 0;
+        const prev = q.priceYesterday || 0;
+        const pct = changePct(last, prev);
+        const isUp = pct >= 0;
+        const sym = q.lVal18AFC || '?';
+        const name = q.lVal30 || sym;
+
+        detail.innerHTML = `
+          <div class="sd-header">
+            <div>
+              <div class="sd-title">${name}</div>
+              <div class="sd-symbol">${sym} | ${q.cValMne || ''}</div>
+            </div>
+            <button class="sd-close" onclick="document.getElementById('symbolDetail').classList.remove('active')">✕ بستن</button>
+          </div>
+          <div class="sd-price-row">
+            <div class="sd-last-price">${fmtRial(last)}</div>
+            <div class="sd-change ${isUp ? 'up' : 'down'}">${isUp ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}% (${fmtRial(Math.abs(last - prev))})</div>
+          </div>
+          <div class="sd-grid">
+            <div class="sd-stat"><div class="sd-stat-label">اولین قیمت</div><div class="sd-stat-value">${fmtRial(q.pOpening || q.priceFirst)}</div></div>
+            <div class="sd-stat"><div class="sd-stat-label">بالاترین</div><div class="sd-stat-value" style="color:var(--green);">${fmtRial(q.priceMax)}</div></div>
+            <div class="sd-stat"><div class="sd-stat-label">پایین‌ترین</div><div class="sd-stat-value" style="color:var(--red);">${fmtRial(q.priceMin)}</div></div>
+            <div class="sd-stat"><div class="sd-stat-label">حجم معاملات</div><div class="sd-stat-value">${fmtVolume(q.qTotTran5J)}</div></div>
+            <div class="sd-stat"><div class="sd-stat-label">ارزش معاملات</div><div class="sd-stat-value">${fmtVolume(q.qTotCap)}</div></div>
+            <div class="sd-stat"><div class="sd-stat-label">تعداد معاملات</div><div class="sd-stat-value">${fmt(q.zTotTran)}</div></div>
+            <div class="sd-stat"><div class="sd-stat-label">EPS</div><div class="sd-stat-value">${q.eps?.estimatedEPS ? fmtRial(q.eps.estimatedEPS) : '--'}</div></div>
+            <div class="sd-stat"><div class="sd-stat-label">P/E sector</div><div class="sd-stat-value">${q.pe?.sectorPE ? Number(q.pe.sectorPE).toFixed(1) : '--'}</div></div>
+          </div>
+          <div class="sd-chart-container">
+            <canvas id="detailChart" width="800" height="200"></canvas>
+          </div>
+        `;
+
+        // Draw chart from daily history
+        if (dailyData?.closingPriceDaily) {
+          drawHistoryChart('detailChart', dailyData.closingPriceDaily);
+        }
+
+        // Update order book
+        renderOrderBook(orderData, name, sym);
+
+        // Update money flow
+        renderMoneyFlow(clientData, name);
+
+      } catch (err) {
+        detail.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><div>خطا در دریافت اطلاعات: ${err.message}</div></div>`;
+      }
+    }
+
+    // ── Order Book ──
+    function renderOrderBook(data, name, sym) {
+      const el = document.getElementById('marketDepth');
+      const title = document.getElementById('depthTitle');
+      title.textContent = `${name} (${sym})`;
+
+      if (!data?.bestLimits) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><div>داده‌ای موجود نیست</div></div>';
+        return;
+      }
+
+      const bids = (data.bestLimits || []).filter(b => b.number >= 1 && b.number <= 5 && b.qTitMeDem > 0);
+      const asks = (data.bestLimits || []).filter(b => b.number >= 1 && b.number <= 5 && b.qTitMeOf > 0);
+
+      // Separate asks (offer) and bids (demand)
+      const askRows = asks.slice(0, 5).sort((a, b) => b.pMeOf - a.pMeOf);
+      const bidRows = bids.slice(0, 5).sort((a, b) => b.pMeDem - a.pMeDem);
+      const maxVol = Math.max(...askRows.map(r => r.qTitMeOf || 0), ...bidRows.map(r => r.qTitMeDem || 0), 1);
+
+      let html = '';
+      askRows.forEach(d => {
+        const pct = ((d.qTitMeOf || 0) / maxVol) * 100;
+        html += `<div class="depth-row ask">
+          <div class="depth-bar" style="width:${pct}%"></div>
+          <div class="depth-volume">${fmtVolume(d.qTitMeOf)}</div>
+          <div class="depth-price">${fmtRial(d.pMeOf)}</div>
+          <div class="depth-orders">${fmt(d.zOrdMeOf)} سفارش</div>
+        </div>`;
+      });
+
+      // Find last traded price
+      const midPrice = bidRows[0] ? bidRows[0].pMeDem : '--';
+      html += `<div class="depth-separator" style="color:var(--green);">${fmtRial(midPrice)}</div>`;
+
+      bidRows.forEach(d => {
+        const pct = ((d.qTitMeDem || 0) / maxVol) * 100;
+        html += `<div class="depth-row bid">
+          <div class="depth-bar" style="width:${pct}%"></div>
+          <div class="depth-volume">${fmtVolume(d.qTitMeDem)}</div>
+          <div class="depth-price">${fmtRial(d.pMeDem)}</div>
+          <div class="depth-orders">${fmt(d.zOrdMeDem)} سفارش</div>
+        </div>`;
+      });
+
+      el.innerHTML = html;
+    }
+
+    // ── Money Flow ──
+    function renderMoneyFlow(data, name) {
+      const el = document.getElementById('moneyFlow');
+      const ct = data?.clientType;
+
+      if (!ct) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">💰</div><div>داده‌ای موجود نیست</div></div>';
+        return;
+      }
+
+      const buyI = ct.buy_I_Volume || 0;
+      const buyN = ct.buy_N_Volume || 0;
+      const sellI = ct.sell_I_Volume || 0;
+      const sellN = ct.sell_N_Volume || 0;
+      const totalBuy = buyI + buyN;
+      const totalSell = sellI + sellN;
+      const total = totalBuy + totalSell || 1;
+
+      const individualPct = ((buyI + sellI) / total * 100).toFixed(1);
+      const legalPct = (100 - individualPct).toFixed(1);
+
+      el.innerHTML = `
+        <div style="padding:16px 20px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+            <div style="text-align:center;flex:1;">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">حقیقی (خرید)</div>
+              <div style="font-size:14px;font-weight:700;color:var(--green);">${fmtVolume(buyI)}</div>
+            </div>
+            <div style="text-align:center;flex:1;">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">حقوقی (خرید)</div>
+              <div style="font-size:14px;font-weight:700;color:var(--green);">${fmtVolume(buyN)}</div>
+            </div>
+          </div>
+          <div style="height:8px;border-radius:4px;overflow:hidden;display:flex;margin-bottom:8px;background:var(--bg-primary);">
+            <div style="width:${individualPct}%;background:var(--blue);transition:width 0.5s;"></div>
+            <div style="width:${legalPct}%;background:var(--purple);transition:width 0.5s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);">
+            <span>حقیقی ${individualPct}%</span>
+            <span>حقوقی ${legalPct}%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:12px;">
+            <div style="text-align:center;flex:1;">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">حقیقی (فروش)</div>
+              <div style="font-size:14px;font-weight:700;color:var(--red);">${fmtVolume(sellI)}</div>
+            </div>
+            <div style="text-align:center;flex:1;">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">حقوقی (فروش)</div>
+              <div style="font-size:14px;font-weight:700;color:var(--red);">${fmtVolume(sellN)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ── History Chart ──
+    function drawHistoryChart(canvasId, dailyData) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      // Sort by date ascending
+      const sorted = [...dailyData].sort((a, b) => (a.dEven || 0) - (b.dEven || 0));
+      if (sorted.length < 2) return;
+
+      const prices = sorted.map(d => d.pClosing || d.pDrCotVal || 0).filter(p => p > 0);
+      if (prices.length < 2) return;
+
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      const range = max - min || 1;
+      const pad = 40;
+      const step = (w - pad * 2) / (prices.length - 1);
+
+      // Grid lines
+      ctx.strokeStyle = 'rgba(42,49,70,0.5)';
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i <= 4; i++) {
+        const y = pad + ((h - pad * 2) * i) / 4;
+        ctx.beginPath();
+        ctx.moveTo(pad, y);
+        ctx.lineTo(w - pad, y);
+        ctx.stroke();
+
+        // Price labels
+        const val = max - (range * i) / 4;
+        ctx.fillStyle = '#5a6478';
+        ctx.font = '10px Vazirmatn';
+        ctx.textAlign = 'right';
+        ctx.fillText(fmtRial(Math.round(val)), pad - 4, y + 4);
+      }
+
+      // Draw line
+      const isUp = prices[prices.length - 1] >= prices[0];
+      const color = isUp ? '#00d68f' : '#ff4757';
+
+      ctx.beginPath();
+      prices.forEach((p, i) => {
+        const x = pad + i * step;
+        const y = pad + ((max - p) / range) * (h - pad * 2);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // Fill area
+      ctx.lineTo(pad + (prices.length - 1) * step, h - pad);
+      ctx.lineTo(pad, h - pad);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, isUp ? 'rgba(0,214,143,0.12)' : 'rgba(255,71,87,0.12)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Last price dot
+      const lastX = pad + (prices.length - 1) * step;
+      const lastY = pad + ((max - prices[prices.length - 1]) / range) * (h - pad * 2);
+      ctx.beginPath();
+      ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(lastX, lastY, 8, 0, Math.PI * 2);
+      ctx.fillStyle = isUp ? 'rgba(0,214,143,0.2)' : 'rgba(255,71,87,0.2)';
+      ctx.fill();
+    }
+
+    // ── Search ──
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+
+    searchInput.addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      const q = this.value.trim();
+      if (q.length < 1) {
+        searchResults.classList.remove('active');
+        return;
+      }
+      searchTimeout = setTimeout(async () => {
+        try {
+          // First try local filter
+          const local = allSymbols.filter(s =>
+            (s.lVal18AFC && s.lVal18AFC.includes(q)) ||
+            (s.lVal30 && s.lVal30.includes(q))
+          ).slice(0, 8);
+
+          if (local.length > 0) {
+            renderSearchResults(local);
+          } else {
+            // Try API search
+            const data = await fetchSearch(q);
+            const results = data.instrumentSearch || [];
+            renderSearchResults(results.map(r => ({
+              insCode: r.insCode,
+              lVal18AFC: r.lVal18AFC,
+              lVal30: r.lVal30,
+              flow: r.flow,
+              pClosing: 0,
+              priceYesterday: 0,
+            })));
+          }
+        } catch {
+          searchResults.classList.remove('active');
+        }
+      }, 300);
+    });
+
+    function renderSearchResults(results) {
+      if (!results.length) {
+        searchResults.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">نتیجه‌ای یافت نشد</div>';
+        searchResults.classList.add('active');
+        return;
+      }
+      searchResults.innerHTML = results.map(s => {
+        const pct = s.pClosing && s.priceYesterday ? changePct(s.pClosing, s.priceYesterday) : null;
+        return `<div class="search-result-item" onclick="selectSymbol(${s.insCode});searchResults.classList.remove('active');searchInput.value='';">
+          <div>
+            <div class="sr-name">${s.lVal30 || s.lVal18AFC || '?'}</div>
+            <div class="sr-symbol">${s.lVal18AFC || ''}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${pct !== null ? `<span class="stock-change-badge ${pct >= 0 ? 'up' : 'down'}" style="font-size:10px;">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct).toFixed(1)}%</span>` : ''}
+            <span class="sr-badge">${s.flow === 1 ? 'بورس' : s.flow === 2 ? 'فرابورس' : 'بازار پایه'}</span>
+          </div>
+        </div>`;
+      }).join('');
+      searchResults.classList.add('active');
+    }
+
+    // Close search on outside click
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.search-box')) searchResults.classList.remove('active');
+    });
+
+    // ── Tab Switch ──
+    function switchTab(btn) {
+      btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderStockTable(allSymbols, btn.dataset.tab);
+    }
+
+    // ── Clock ──
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('liveTime').textContent =
+        String(now.getHours()).padStart(2, '0') + ':' +
+        String(now.getMinutes()).padStart(2, '0') + ':' +
+        String(now.getSeconds()).padStart(2, '0');
+    }
+
+    // ── News (Codal) ──
+    async function loadNews() {
+      const el = document.getElementById('newsList');
+      try {
+        const data = await apiFetch('/api/news');
+        const items = data.preparedData || [];
+        if (!items.length) throw new Error('empty');
+        el.innerHTML = items.slice(0, 6).map(n => {
+          const title = n.title || n.codalTitle || n.subject || 'اطلاعیه';
+          const sym = n.symbol || n.cSymbol || '';
+          const dt = n.publishDateTime ? new Date(n.publishDateTime).toLocaleDateString('fa-IR') : '';
+          return `<div class="news-item">
+            <div class="news-thumb">📄</div>
+            <div class="news-content">
+              <div class="news-title">${title}</div>
+              <div class="news-meta">
+                ${sym ? `<span class="news-tag normal">${sym}</span>` : ''}
+                <span>${dt}</span>
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (_) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">📰</div><div>اخبار کدال در دسترس نیست</div></div>';
+      }
+    }
+
+    // ── Init & Refresh ──
+    async function loadMarketData() {
+      try {
+        setStatus('loading', '⏳ در حال دریافت داده‌های بازار...');
+        const symbols = await fetchMarketWatch();
+
+        if (!symbols.length) {
+          setStatus('error', '⚠️ داده‌ای دریافت نشد. ممکن است بازار بسته باشد.');
+          startRetryCountdown(30);
+          return;
+        }
+
+        const srcLabel = lastMeta && lastMeta.source === 'live' ? 'زنده' : 'کش‌شده';
+        setStatus('connected', `✅ متصل (داده ${srcLabel}) — ${fmt(symbols.length)} نماد بارگذاری شد`);
+        if (lastMeta && lastMeta.source === 'seed') { setStatus('connected', 'حالت نمایشی (دمو) — داده‌های نمونه به‌جای داده زنده نمایش داده می‌شود'); } if (lastMeta && lastMeta.source === 'live-snapshot') { setStatus('connected', '✅ متصل — داده واقعی بورس (اسنپ‌شات ۱۵ دقیقه‌ای)'); } // SNAPSHOT_LABEL
+        // DEMO_STATUS_OVERRIDE
+        const when = lastMeta && lastMeta.ts ? new Date(lastMeta.ts).toLocaleTimeString('fa-IR') : new Date().toLocaleTimeString('fa-IR');
+        document.getElementById('lastUpdate').textContent = `آخرین به‌روزرسانی: ${when}`;
+        updateSourceBadge();
+
+        renderTicker(symbols);
+
+        // Real indices; graceful fallback to top-traded cards
+        try {
+          const idx = await fetchIndices();
+          renderIndices(idx.indices, symbols);
+        } catch (_) {
+          renderIndices([], symbols);
+        }
+
+        renderStockTable(symbols, 'gainers');
+
+      } catch (err) {
+        setStatus('error', '❌ قطع ارتباط با منبع داده — در حال تلاش مجدد...');
+        startRetryCountdown(30);
+      }
+    }
+
+    function init() {
+      updateClock();
+      setInterval(updateClock, 1000);
+      loadMarketData();
+      loadNews();
+      // Auto-refresh every 60 seconds
+      refreshInterval = setInterval(loadMarketData, 60000);
+      setInterval(loadNews, 300000);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
