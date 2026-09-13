@@ -60,6 +60,6 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Publish site + data snapshot $(date -u +%FT%TZ) [skip ci]"
-            git pull --rebase origin ${{ github.default_branch }}
-            git push origin HEAD:${{ github.default_branch }}
+            git pull --rebase origin ${{ github.ref_name }}
+            git push origin HEAD:${{ github.ref_name }}
           fi
