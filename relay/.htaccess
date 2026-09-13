@@ -1,0 +1,7 @@
+# TSETMC relay — Apache config for shared hosting.
+# Forwards every /relay/<path> to relay/index.php (which proxies to cdn.tsetmc.com).
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^ index.php [QSA,L]
+</IfModule>
