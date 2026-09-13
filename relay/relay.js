@@ -11,6 +11,8 @@
  * Then set this env var on the Freebuff deployment:
  *   TSETMC_RELAY=http://<relay-ip>:8787
  * and every TSETMC call goes through the relay automatically.
+ *
+ * Local test endpoint: /relay-health (does NOT hit TSETMC).
  */
 
 const http = require('http');
@@ -33,6 +35,12 @@ http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
   if (req.method !== 'GET') { res.writeHead(405); res.end(); return; }
+
+  if (req.url === '/relay-health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, upstream: UPSTREAM, secret: SECRET ? 'on' : 'off' }));
+    return;
+  }
 
   if (SECRET) {
     const u = new URL(req.url, 'http://x');

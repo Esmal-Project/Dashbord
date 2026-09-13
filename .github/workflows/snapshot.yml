@@ -38,6 +38,9 @@ jobs:
           node-version: '20'
 
       - name: Fetch live TSETMC snapshot
+        env:
+          TSETMC_RELAY: ${{ secrets.TSETMC_RELAY }}
+          RELAY_SECRET: ${{ secrets.RELAY_SECRET }}
         run: node scripts/tsetmc-snapshot.js || echo "::warning::live snapshot failed, using seed fallback"
 
       - name: Build static site + api JSON

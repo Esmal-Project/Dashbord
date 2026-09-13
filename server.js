@@ -56,7 +56,11 @@ const BREAKER_COOLDOWN_MS = 60 * 1000;
 function tsetmcFetch(apiPath, timeoutMs = 6000) {
   return new Promise((resolve, reject) => {
     const mod = TSETMC_BASE.startsWith('http://') ? require('http') : https;
-    const req = mod.request(TSETMC_BASE + apiPath, {
+    let reqPath = apiPath;
+    if (process.env.RELAY_SECRET && TSETMC_BASE !== 'https://cdn.tsetmc.com') {
+      reqPath += (reqPath.includes('?') ? '&' : '?') + 'key=' + encodeURIComponent(process.env.RELAY_SECRET);
+    }
+    const req = mod.request(TSETMC_BASE + reqPath, {
       headers: BROWSER_HEADERS,
       timeout: timeoutMs,
     }, (res) => {

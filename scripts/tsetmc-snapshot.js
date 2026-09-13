@@ -1,8 +1,13 @@
 'use strict';
 
 /**
- * TSETMC snapshot fetcher — runs in GitHub Actions (their IPs can reach TSETMC).
- * Zero dependencies. Writes { data, ts } JSON files into data/live/.
+ * TSETMC snapshot fetcher — runs anywhere that can reach TSETMC
+ * (GitHub Actions, an Iranian VPS, etc.). Zero dependencies.
+ * Writes { data, ts } JSON files into data/live/.
+ *
+ * Optional env:
+ *   TSETMC_RELAY=http://<host>:<port>   fetch through a relay instead of directly
+ *   RELAY_SECRET=<token>                if the relay requires ?key=<token>
  *
  * Usage: node scripts/tsetmc-snapshot.js
  */
@@ -12,7 +17,8 @@ const path = require('path');
 const https = require('https');
 const zlib = require('zlib');
 
-const BASE = 'https://cdn.tsetmc.com';
+const BASE = (process.env.TSETMC_RELAY || 'https://cdn.tsetmc.com').replace(/\/+$/, '');
+const SECRET = process.env.RELAY_SECRET || '';
 const OUT = path.join(__dirname, '..', 'data', 'live');
 const HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
@@ -24,7 +30,9 @@ const HEADERS = {
 
 function fetchJson(apiPath, timeoutMs = 20000) {
   return new Promise((resolve, reject) => {
-    const req = https.request(BASE + apiPath, { headers: HEADERS, timeout: timeoutMs }, (res) => {
+    let url = BASE + apiPath;
+    if (SECRET) url += (url.includes('?') ? '&' : '?') + 'key=' + encodeURIComponent(SECRET);
+    const req = https.request(url, { headers: HEADERS, timeout: timeoutMs }, (res) => {
       if (res.statusCode !== 200) { res.resume(); reject(new Error('HTTP ' + res.statusCode + ' ' + apiPath)); return; }
       let stream = res;
       if (res.headers['content-encoding'] === 'gzip') { const gz = zlib.createGunzip(); res.pipe(gz); stream = gz; }

@@ -1,0 +1,16 @@
+[Unit]
+Description=TSETMC relay (forwards requests to cdn.tsetmc.com from an Iranian IP)
+After=network.target
+
+[Service]
+Type=simple
+# Optional: uncomment and set a secret, then mirror it in GitHub/Freebuff as RELAY_SECRET
+# Environment=RELAY_SECRET=change-me
+Environment=PORT=8787
+WorkingDirectory=/opt/tsetmc-relay
+ExecStart=/usr/bin/node /opt/tsetmc-relay/relay.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
