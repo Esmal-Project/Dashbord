@@ -1,0 +1,65 @@
+name: Publish site + TSETMC data
+
+# GitHub Pages (legacy mode) serves the repo root of `main`.
+# This workflow:
+#   1. Fetches real TSETMC data (Actions runner IPs can reach TSETMC;
+#      on failure the static build falls back to seed data).
+#   2. Builds dist/ = site + static api/*.json.
+#   3. Copies them to the repo root and pushes, so Pages goes live.
+# Runs on every push to main and every 15 minutes for fresh data.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'index.html'
+      - '404.html'
+      - 'api/**'
+      - 'data/live/**'
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch live TSETMC snapshot
+        run: node scripts/tsetmc-snapshot.js || echo "::warning::live snapshot failed, using seed fallback"
+
+      - name: Build static site + api JSON
+        run: node scripts/build-static.js
+
+      - name: Publish to repo root (GitHub Pages source)
+        run: |
+          mkdir -p api
+          cp dist/index.html dist/404.html .
+          cp dist/.nojekyll .
+          cp dist/api/*.json api/
+
+      - name: Commit and push
+        run: |
+          mkdir -p data/live
+          git config user.name "bourse-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html 404.html .nojekyll api/ data/live/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Publish site + data snapshot $(date -u +%FT%TZ) [skip ci]"
+            git pull --rebase origin ${{ github.default_branch }}
+            git push origin HEAD:${{ github.default_branch }}
+          fi

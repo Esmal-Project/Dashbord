@@ -548,11 +548,18 @@
       <div class="hero-time">
         <div class="time-label">ساعت <span class="live-dot"></span></div>
         <div class="time-val" id="liveTime">--:--:--</div>
+        <span id="dataSourceBadge" style="display:none;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-top:4px;display:inline-block;"></span>
       </div>
     </div>
     <div id="connectionStatus" class="status-bar loading">⏳ در حال اتصال به سرور داده...</div>
 
     <!-- Index Cards -->
+    <div class="indices-header" style="margin-bottom:12px;">
+      <div class="section-title" style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;">
+        <span class="icon" style="width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;background:var(--green-bg);color:var(--green);">🏦</span>
+        <span id="indicesTitle">بازار در یک نگاه</span>
+      </div>
+    </div>
     <div class="indices-grid" id="indicesGrid">
       <div class="index-card up"><div class="loading-shimmer" style="height:100px;"></div></div>
       <div class="index-card down"><div class="loading-shimmer" style="height:100px;"></div></div>
@@ -578,7 +585,7 @@
         <div class="tab-group">
           <button class="tab-btn active" data-tab="gainers" onclick="switchTab(this)">پربازده‌ها</button>
           <button class="tab-btn" data-tab="losers" onclick="switchTab(this)">پرضررها</button>
-          <button class="tab-btn" data-tab="active" onclick="switchTab(this)">پ facto فعال‌ها</button>
+          <button class="tab-btn" data-tab="active" onclick="switchTab(this)">فعال‌ترین‌ها</button>
         </div>
       </div>
       <div class="stock-table-header">
@@ -618,7 +625,7 @@
           </div>
         </div>
         <div id="moneyFlow">
-          <div class="empty-state"><div class="icon">💡</div><div>select a symbol</div></div>
+          <div class="empty-state"><div class="icon">💡</div><div>یک نماد را انتخاب کنید</div></div>
         </div>
       </div>
 
@@ -632,7 +639,7 @@
         </div>
         <div id="newsList">
           <div class="news-item"><div class="news-thumb">📊</div><div class="news-content">
-            <div class="news-title">در حال دری latest اخبار...</div>
+            <div class="news-title">در حال دریافت اخبار کدال...</div>
           </div></div>
         </div>
       </div>
@@ -667,7 +674,8 @@
     //  BourseMag — Live Data Engine
     // ══════════════════════════════════════════
 
-    const API = '';  // same origin proxy
+    const API = '';  // same origin
+    let API_SUFFIX = '';  // '' on the Node proxy, '.json' on static hosting (GitHub Pages)
     let allSymbols = [];       // full market watch data
     let selectedInsCode = null;
     let refreshInterval = null;
@@ -675,13 +683,26 @@
 
     // ── Known index instrument codes ──
     const INDEX_CODES = {
+      '32097828799138957': { name: 'شاخص کل', icon: '🏦' },
       '32097828820363860': { name: 'شاخص کل', icon: '🏦' },
       '67130298613737946': { name: 'شاخص هم‌وزن', icon: '⚖️' },
     };
 
+    async function fetchIndices() {
+      return apiFetch('/api/indices');
+    }
+
     // ── API Calls ──
     async function apiFetch(path) {
-      const res = await fetch(API + path);
+      // Node proxy serves /api/x — static hosting (GitHub Pages) serves api/x.json
+      const rel = path.replace(/^\/api\//, 'api/');
+      let url = rel + API_SUFFIX;
+      let res = await fetch(url);
+      if (API_SUFFIX === '' && !res.ok) {
+        API_SUFFIX = '.json';
+        url = rel + API_SUFFIX;
+        res = await fetch(url);
+      }
       if (!res.ok) throw new Error(`API error ${res.status}`);
       return res.json();
     }
@@ -690,7 +711,52 @@
       const data = await apiFetch('/api/market-watch');
       // data.marketwatch is the array
       allSymbols = data.marketwatch || data.closingPriceInfo || [];
+      lastMeta = data.meta || null;
       return allSymbols;
+    }
+
+    let lastMeta = null;
+
+    // Data-source badge: live / cached / demo
+    function updateSourceBadge() {
+      const badge = document.getElementById('dataSourceBadge');
+      if (!badge) return;
+      if (!lastMeta) { badge.style.display = 'none'; return; }
+      badge.style.display = 'inline-block';
+      if (lastMeta.source === 'live') {
+        badge.textContent = '● داده زنده';
+        badge.style.background = 'var(--green-bg)';
+        badge.style.color = 'var(--green)';
+      } else if (lastMeta.source === 'cache') {
+        badge.textContent = '● آخرین داده ذخیره‌شده';
+        badge.style.background = 'var(--yellow-bg)';
+        badge.style.color = 'var(--yellow)';
+      } else if (lastMeta.source === 'live-snapshot') {
+        badge.textContent = '● داده واقعی (به‌روزرسانی 15 دقیقه‌ای)';
+        badge.style.background = 'var(--green-bg)';
+        badge.style.color = 'var(--green)';
+        } else if (lastMeta.source === 'seed') {
+        badge.textContent = '● حالت نمایشی (دمو)';
+        badge.style.background = 'var(--purple-bg)';
+        badge.style.color = 'var(--purple)';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    // Retry countdown while disconnected
+    let retryTimer = null;
+    function startRetryCountdown(seconds) {
+      clearInterval(retryTimer);
+      let left = seconds;
+      retryTimer = setInterval(() => {
+        left--;
+        const el = document.getElementById('connectionStatus');
+        if (el && el.classList.contains('error')) {
+          el.textContent = `❌ قطع ارتباط با منبع داده — تلاش مجدد تا ${left} ثانیه دیگر`;
+        }
+        if (left <= 0) { clearInterval(retryTimer); loadMarketData(); }
+      }, 1000);
     }
 
     async function fetchQuote(insCode) {
@@ -765,34 +831,48 @@
     }
 
     // ── Render Indices ──
-    function renderIndices(symbols) {
+    function renderIndices(indices, symbols) {
       const grid = document.getElementById('indicesGrid');
-      // Filter to known indices or pick top by market value
-      const indexSymbols = symbols.filter(s =>
-        INDEX_CODES[s.insCode] || (s.flow && s.cValMne === 'شاخص')
-      ).slice(0, 4);
 
-      // If no specific indices found, show top 4 by volume
-      let displaySymbols = indexSymbols;
-      if (displaySymbols.length < 2) {
-        displaySymbols = [...symbols]
-          .filter(s => s.qTotTran5J > 0)
+      // Primary: real index values from /api/indices
+      let cards = (indices || [])
+        .filter(x => x.value > 0)
+        .sort((a, b) => Math.abs(b.changePct || 0) - Math.abs(a.changePct || 0))
+        .slice(0, 4);
+
+      // Fallback: biggest traded symbols of the day (real data, honest label)
+      let fallbackMode = false;
+      if (cards.length === 0) {
+        fallbackMode = true;
+        cards = [...(symbols || [])]
+          .filter(s => s.pClosing > 0 && (s.qTotCap || 0) > 0)
           .sort((a, b) => (b.qTotCap || 0) - (a.qTotCap || 0))
-          .slice(0, 4);
+          .slice(0, 4)
+          .map(s => ({
+            name: s.lVal30 || s.lVal18AFC,
+            value: s.pClosing,
+            changePct: changePct(s.pClosing, s.priceYesterday),
+            changeAbs: s.pClosing - (s.priceYesterday || 0),
+            insCode: s.insCode,
+          }));
       }
 
-      if (displaySymbols.length === 0) {
+      if (cards.length === 0) {
         grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="icon">📊</div><div>داده‌ای یافت نشد</div></div>';
         return;
       }
 
-      grid.innerHTML = displaySymbols.map((s, i) => {
-        const last = s.pClosing || s.pDrCotVal || 0;
-        const prev = s.priceYesterday || 0;
-        const pct = changePct(last, prev);
+      if (fallbackMode) {
+        const title = document.getElementById('indicesTitle');
+        if (title) title.textContent = 'بزرگ‌ترین معاملات امروز';
+      }
+
+      grid.innerHTML = cards.map((s, i) => {
+        const pct = s.changePct || 0;
         const isUp = pct >= 0;
-        const name = INDEX_CODES[s.insCode]?.name || s.lVal30 || s.lVal18AFC || 'نامشخص';
-        const icon = INDEX_CODES[s.insCode]?.icon || '📊';
+        const known = INDEX_CODES[String(s.insCode)] || {};
+        const name = known.name || s.name || 'نامشخص';
+        const icon = known.icon || '📊';
 
         return `<div class="index-card ${isUp ? 'up' : 'down'} fade-in" style="animation-delay:${i * 0.06}s"
                      onclick="selectSymbol(${s.insCode})">
@@ -800,10 +880,10 @@
             <span class="ic-name">${name}</span>
             <span class="ic-icon">${icon}</span>
           </div>
-          <div class="ic-value">${fmtRial(last)}</div>
+          <div class="ic-value">${fmtRial(s.value)}</div>
           <div class="ic-change">
             <span>${isUp ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%</span>
-            <span style="font-size:11px;color:var(--text-muted);font-weight:400">${fmtRial(Math.abs(last - prev))} واحد</span>
+            <span style="font-size:11px;color:var(--text-muted);font-weight:400">${fmtRial(Math.abs(s.changeAbs || 0))} واحد</span>
           </div>
         </div>`;
       }).join('');
@@ -862,47 +942,36 @@
       });
     }
 
-    // ── Draw Mini Sparkline ──
+    // ── Draw Mini Sparkline (honest: bars sized by % change vs yesterday) ──
     function drawSparkline(canvas, last, prev) {
       const ctx = canvas.getContext('2d');
       const w = canvas.width, h = canvas.height;
       ctx.clearRect(0, 0, w, h);
 
-      const isUp = last >= prev;
+      if (!last || !prev) return;
+      const pct = changePct(last, prev);           // e.g. +3.4 means +3.4% (typical daily range)
+      const isUp = pct >= 0;
       const color = isUp ? '#00d68f' : '#ff4757';
 
-      // Generate fake sparkline data based on price
-      const pts = 10;
-      const data = [];
-      let v = 50 + (Math.random() - 0.5) * 20;
-      for (let i = 0; i < pts; i++) {
-        v += (isUp ? 1 : -1) * (Math.random() * 5);
-        v = Math.max(10, Math.min(90, v));
-        data.push(v);
+      // 6 bars growing toward the % change; clamped to ±7% (daily price limit)
+      const bars = 6;
+      const mag = Math.min(Math.abs(pct) / 7, 1);  // 0..1
+      const bw = Math.max(2, Math.floor(w / bars) - 3);
+      const gap = Math.floor((w - bars * bw) / (bars - 1 || 1));
+
+      for (let i = 0; i < bars; i++) {
+        const frac = (i + 1) / bars;
+        const bh = Math.max(2, Math.round(frac * mag * (h - 4)));
+        const x = w - (bw + (bw + gap) * i) + gap;
+        const y = h - bh;
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.25 + frac * 0.75;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, bw, bh, 2);
+        else ctx.rect(x, y, bw, bh);
+        ctx.fill();
       }
-      data[pts - 1] = isUp ? 70 + Math.random() * 20 : 20 + Math.random() * 20;
-
-      const step = w / (data.length - 1);
-      ctx.beginPath();
-      data.forEach((v, i) => {
-        const x = w - i * step;
-        const y = h - (v / 100) * (h - 4) - 2;
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      });
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.5;
-      ctx.lineJoin = 'round';
-      ctx.stroke();
-
-      // Fill
-      ctx.lineTo(0, h);
-      ctx.lineTo(w, h);
-      ctx.closePath();
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, isUp ? 'rgba(0,214,143,0.15)' : 'rgba(255,71,87,0.15)');
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grad;
-      ctx.fill();
+      ctx.globalAlpha = 1;
     }
 
     // ── Select Symbol ──
@@ -920,7 +989,17 @@
           fetchDailyHistory(insCode).catch(() => null),
         ]);
 
-        const q = quoteData?.closingPriceInfo;
+        let q = quoteData?.closingPriceInfo;
+        if (!q) {
+          // Static-mode fallback: build the quote card from the market-watch row
+          const row = allSymbols.find(s => String(s.insCode) === String(insCode));
+          if (row) {
+            q = { insCode: row.insCode, lVal18AFC: row.lVal18AFC, lVal30: row.lVal30, cValMne: row.lVal18AFC,
+              pClosing: row.pClosing, pDrCotVal: row.pDrCotVal, priceYesterday: row.priceYesterday,
+              priceFirst: row.priceFirst, priceMin: row.priceMin, priceMax: row.priceMax,
+              qTotTran5J: row.qTotTran5J, qTotCap: row.qTotCap, zTotTran: row.zTotTran, baseVol: row.baseVol };
+          }
+        }
         if (!q) {
           detail.innerHTML = '<div class="empty-state">اطلاعات یافت نشد</div>';
           return;
@@ -1238,6 +1317,33 @@
         String(now.getSeconds()).padStart(2, '0');
     }
 
+    // ── News (Codal) ──
+    async function loadNews() {
+      const el = document.getElementById('newsList');
+      try {
+        const data = await apiFetch('/api/news');
+        const items = data.preparedData || [];
+        if (!items.length) throw new Error('empty');
+        el.innerHTML = items.slice(0, 6).map(n => {
+          const title = n.title || n.codalTitle || n.subject || 'اطلاعیه';
+          const sym = n.symbol || n.cSymbol || '';
+          const dt = n.publishDateTime ? new Date(n.publishDateTime).toLocaleDateString('fa-IR') : '';
+          return `<div class="news-item">
+            <div class="news-thumb">📄</div>
+            <div class="news-content">
+              <div class="news-title">${title}</div>
+              <div class="news-meta">
+                ${sym ? `<span class="news-tag normal">${sym}</span>` : ''}
+                <span>${dt}</span>
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (_) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">📰</div><div>اخبار کدال در دسترس نیست</div></div>';
+      }
+    }
+
     // ── Init & Refresh ──
     async function loadMarketData() {
       try {
@@ -1246,18 +1352,33 @@
 
         if (!symbols.length) {
           setStatus('error', '⚠️ داده‌ای دریافت نشد. ممکن است بازار بسته باشد.');
+          startRetryCountdown(30);
           return;
         }
 
-        setStatus('connected', `✅ متصل — ${fmt(symbols.length)} نماد بارگذاری شد`);
-        document.getElementById('lastUpdate').textContent = `آخرین به‌روزرسانی: ${new Date().toLocaleTimeString('fa-IR')}`;
+        const srcLabel = lastMeta && lastMeta.source === 'live' ? 'زنده' : 'کش‌شده';
+        setStatus('connected', `✅ متصل (داده ${srcLabel}) — ${fmt(symbols.length)} نماد بارگذاری شد`);
+        if (lastMeta && lastMeta.source === 'seed') { setStatus('connected', 'حالت نمایشی (دمو) — داده‌های نمونه به‌جای داده زنده نمایش داده می‌شود'); } if (lastMeta && lastMeta.source === 'live-snapshot') { setStatus('connected', '✅ متصل — داده واقعی بورس (اسنپ‌شات ۱۵ دقیقه‌ای)'); } // SNAPSHOT_LABEL
+        // DEMO_STATUS_OVERRIDE
+        const when = lastMeta && lastMeta.ts ? new Date(lastMeta.ts).toLocaleTimeString('fa-IR') : new Date().toLocaleTimeString('fa-IR');
+        document.getElementById('lastUpdate').textContent = `آخرین به‌روزرسانی: ${when}`;
+        updateSourceBadge();
 
         renderTicker(symbols);
-        renderIndices(symbols);
+
+        // Real indices; graceful fallback to top-traded cards
+        try {
+          const idx = await fetchIndices();
+          renderIndices(idx.indices, symbols);
+        } catch (_) {
+          renderIndices([], symbols);
+        }
+
         renderStockTable(symbols, 'gainers');
 
       } catch (err) {
-        setStatus('error', `❌ خطا در اتصال: ${err.message}`);
+        setStatus('error', '❌ قطع ارتباط با منبع داده — در حال تلاش مجدد...');
+        startRetryCountdown(30);
       }
     }
 
@@ -1265,8 +1386,10 @@
       updateClock();
       setInterval(updateClock, 1000);
       loadMarketData();
+      loadNews();
       // Auto-refresh every 60 seconds
       refreshInterval = setInterval(loadMarketData, 60000);
+      setInterval(loadNews, 300000);
     }
 
     document.addEventListener('DOMContentLoaded', init);
