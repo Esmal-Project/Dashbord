@@ -421,15 +421,22 @@ app.get('/api/news', async (req, res) => {
 // On static hosting the build writes api/config.json; here we expose the same
 // shape from env so preview + deploy behave identically.
 app.get('/api/config', (req, res) => {
-  const relay = (process.env.TSETMC_RELAY || '').trim().replace(/\/$/, '');
-  if (!relay || relay.startsWith('https://cdn.tsetmc.com')) {
-    return res.json({ relay: '', relayKey: '' });
-  }
-  res.json({
-    relay: relay,
-    relayKey: (process.env.PUBLIC_RELAY_KEY || '').trim() || '',
-  });
+  const cfg = relayConfig();
+  res.json(cfg);
 });
+
+// env wins; otherwise fall back to the committed relay-config.json
+function relayConfig() {
+  let file = { relay: '', relayKey: '' };
+  try {
+    const f = JSON.parse(fs.readFileSync(path.join(__dirname, 'relay-config.json'), 'utf8'));
+    file = { relay: f.relay || '', relayKey: f.relayKey || '' };
+  } catch (_) { /* optional file */ }
+  const relay = (process.env.TSETMC_RELAY || file.relay || '').trim().replace(/\/$/, '');
+  const relayKey = (process.env.PUBLIC_RELAY_KEY || file.relayKey || '').trim();
+  if (!relay || relay.startsWith('https://cdn.tsetmc.com')) return { relay: '', relayKey: '' };
+  return { relay, relayKey };
+}
 
 // ── Health ──
 app.get('/api/health', (req, res) => {

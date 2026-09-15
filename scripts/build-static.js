@@ -112,14 +112,27 @@ function buildApi() {
   // /api/config — lets the frontend detect a live relay for browser-direct
   // TSETMC polling (true live data). PUBLIC_RELAY_KEY is optional; only set it
   // if you intentionally want the key shipped to browsers.
-  const relay = (process.env.TSETMC_RELAY || '').trim().replace(/\/$/, '');
+  // Order: CI secrets (env) → relay-config.json (committed, hand-editable).
+  // Keeping the file option means the relay can be switched on with a plain
+  // commit — no repository secrets required.
+  const fileCfg = readRelayConfigFile();
+  const relay = (process.env.TSETMC_RELAY || fileCfg.relay || '').trim().replace(/\/$/, '');
+  const relayKey = (process.env.PUBLIC_RELAY_KEY || fileCfg.relayKey || '').trim();
   if (relay && !relay.startsWith('https://cdn.tsetmc.com')) {
-    writeJson('api/config.json', {
-      relay: relay,
-      relayKey: (process.env.PUBLIC_RELAY_KEY || '').trim() || '',
-    });
+    writeJson('api/config.json', { relay, relayKey });
   } else {
     writeJson('api/config.json', { relay: '', relayKey: '' });
+  }
+}
+
+// ── Optional hand-editable relay config (no CI secrets needed) ──
+
+function readRelayConfigFile() {
+  try {
+    const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'relay-config.json'), 'utf8'));
+    return { relay: cfg.relay || '', relayKey: cfg.relayKey || '' };
+  } catch (_) {
+    return { relay: '', relayKey: '' };
   }
 }
 
