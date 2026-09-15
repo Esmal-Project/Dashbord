@@ -417,6 +417,20 @@ app.get('/api/news', async (req, res) => {
   }
 });
 
+// ── Config (frontend live-relay detection) ──
+// On static hosting the build writes api/config.json; here we expose the same
+// shape from env so preview + deploy behave identically.
+app.get('/api/config', (req, res) => {
+  const relay = (process.env.TSETMC_RELAY || '').trim().replace(/\/$/, '');
+  if (!relay || relay.startsWith('https://cdn.tsetmc.com')) {
+    return res.json({ relay: '', relayKey: '' });
+  }
+  res.json({
+    relay: relay,
+    relayKey: (process.env.PUBLIC_RELAY_KEY || '').trim() || '',
+  });
+});
+
 // ── Health ──
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, uptime: process.uptime() });

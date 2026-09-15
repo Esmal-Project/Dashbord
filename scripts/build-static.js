@@ -108,6 +108,19 @@ function buildApi() {
     error: 'static-mode',
     detail: 'Per-symbol endpoints need the Node server or a relay; see README.',
   });
+
+  // /api/config — lets the frontend detect a live relay for browser-direct
+  // TSETMC polling (true live data). PUBLIC_RELAY_KEY is optional; only set it
+  // if you intentionally want the key shipped to browsers.
+  const relay = (process.env.TSETMC_RELAY || '').trim().replace(/\/$/, '');
+  if (relay && !relay.startsWith('https://cdn.tsetmc.com')) {
+    writeJson('api/config.json', {
+      relay: relay,
+      relayKey: (process.env.PUBLIC_RELAY_KEY || '').trim() || '',
+    });
+  } else {
+    writeJson('api/config.json', { relay: '', relayKey: '' });
+  }
 }
 
 // ── 404.html (GitHub Pages serves it for unknown paths) ─────────

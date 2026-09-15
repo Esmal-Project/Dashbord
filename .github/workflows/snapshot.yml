@@ -44,6 +44,9 @@ jobs:
         run: node scripts/tsetmc-snapshot.js || echo "::warning::live snapshot failed, using seed fallback"
 
       - name: Build static site + api JSON
+        env:
+          TSETMC_RELAY: ${{ secrets.TSETMC_RELAY }}
+          PUBLIC_RELAY_KEY: ${{ secrets.PUBLIC_RELAY_KEY }}
         run: node scripts/build-static.js
 
       - name: Publish to repo root (GitHub Pages source)
