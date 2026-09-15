@@ -222,6 +222,76 @@
     }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
+    /* ── Animated Aurora Background ── */
+    .bg-aurora { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+    .bg-aurora::before, .bg-aurora::after { content: ''; position: absolute; border-radius: 50%; filter: blur(90px); }
+    .bg-aurora::before {
+      width: 62vw; height: 62vw;
+      background: radial-gradient(circle, rgba(0,214,143,0.16), transparent 60%);
+      top: -22%; right: -12%;
+      animation: auroraFloat 18s ease-in-out infinite alternate;
+    }
+    .bg-aurora::after {
+      width: 52vw; height: 52vw;
+      background: radial-gradient(circle, rgba(79,140,255,0.15), transparent 60%);
+      bottom: -18%; left: -10%;
+      animation: auroraFloat 24s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes auroraFloat {
+      from { transform: translate3d(0, 0, 0) scale(1); }
+      to { transform: translate3d(5vw, 4vh, 0) scale(1.18); }
+    }
+    .bg-grid {
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(42,49,70,0.16) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(42,49,70,0.16) 1px, transparent 1px);
+      background-size: 44px 44px;
+      -webkit-mask-image: radial-gradient(ellipse at 50% 0%, black 15%, transparent 75%);
+      mask-image: radial-gradient(ellipse at 50% 0%, black 15%, transparent 75%);
+    }
+
+    /* ── Hero title shine ── */
+    .hero-title span {
+      background-size: 200% auto;
+      animation: shineText 6s linear infinite;
+    }
+    @keyframes shineText { to { background-position: 200% center; } }
+
+    /* ── Scroll Reveal ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px) scale(0.99);
+      transition: opacity 0.6s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+      transition-delay: var(--d, 0s);
+    }
+    .reveal.in-view { opacity: 1; transform: none; }
+
+    /* ── Price flash (live updates) ── */
+    @keyframes priceFlashUp {
+      0% { background: var(--green-bg); box-shadow: 0 0 0 1px var(--green), 0 0 16px rgba(0,214,143,0.4); }
+      100% { background: transparent; box-shadow: none; }
+    }
+    @keyframes priceFlashDown {
+      0% { background: var(--red-bg); box-shadow: 0 0 0 1px var(--red), 0 0 16px rgba(255,71,87,0.4); }
+      100% { background: transparent; box-shadow: none; }
+    }
+    .flash-up, .flash-down { border-radius: 6px; padding: 1px 5px; }
+    .flash-up { animation: priceFlashUp 1.1s ease-out; }
+    .flash-down { animation: priceFlashDown 1.1s ease-out; }
+
+    /* ── Nav logo hover ── */
+    .nav-logo { transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .nav-brand:hover .nav-logo { transform: rotate(-6deg) scale(1.08); }
+
+    /* ── Index card spotlight on hover ── */
+    .index-card::after {
+      content: ''; position: absolute; inset: 0; border-radius: inherit;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none;
+      background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,0.06), transparent 45%);
+    }
+    .index-card:hover::after { opacity: 1; }
+
     /* ── Status Bar ── */
     .status-bar {
       display: flex; align-items: center; gap: 16px;
@@ -491,6 +561,16 @@
     .fade-in { opacity: 0; transform: translateY(12px); animation: fadeIn 0.4s forwards; }
     @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
 
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .ticker-track:hover { animation-play-state: running; }
+    }
+
     /* ── Responsive ── */
     @media (max-width: 1024px) {
       .indices-grid { grid-template-columns: repeat(2, 1fr); }
@@ -508,8 +588,9 @@
       .footer-content { grid-template-columns: 1fr; gap: 20px; }
     }
   </style>
-</head>
-<body>
+</head>  <body>
+  <div class="bg-aurora"></div>
+  <div class="bg-grid"></div>
 
   <!-- Ticker Bar -->
   <div class="ticker-bar">
@@ -540,7 +621,7 @@
 
   <!-- Hero -->
   <section class="hero">
-    <div class="hero-top">
+    <div class="hero-top reveal">
       <div>
         <h1 class="hero-title">بازار <span>سرمایه</span> ایران</h1>
         <p class="hero-subtitle">داده‌های لحظه‌ای از سایت سازمان بورس و اوراق بهادار</p>
@@ -551,16 +632,16 @@
         <span id="dataSourceBadge" style="display:none;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-top:4px;display:inline-block;"></span>
       </div>
     </div>
-    <div id="connectionStatus" class="status-bar loading">⏳ در حال اتصال به سرور داده...</div>
+    <div id="connectionStatus" class="status-bar loading reveal" style="--d:0.08s">⏳ در حال اتصال به سرور داده...</div>
 
     <!-- Index Cards -->
-    <div class="indices-header" style="margin-bottom:12px;">
+    <div class="indices-header reveal" style="margin-bottom:12px;--d:0.12s">
       <div class="section-title" style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;">
         <span class="icon" style="width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;background:var(--green-bg);color:var(--green);">🏦</span>
         <span id="indicesTitle">بازار در یک نگاه</span>
       </div>
     </div>
-    <div class="indices-grid" id="indicesGrid">
+    <div class="indices-grid reveal" id="indicesGrid" style="--d:0.16s">
       <div class="index-card up"><div class="loading-shimmer" style="height:100px;"></div></div>
       <div class="index-card down"><div class="loading-shimmer" style="height:100px;"></div></div>
       <div class="index-card up"><div class="loading-shimmer" style="height:100px;"></div></div>
@@ -576,7 +657,7 @@
   <!-- Main Content -->
   <div class="main-content">
     <!-- Stock Table -->
-    <div class="section-card fade-in">
+    <div class="section-card reveal" style="--d:0.22s">
       <div class="section-header">
         <div class="section-title">
           <span class="icon" style="background:var(--blue-bg);color:var(--blue);">📈</span>
@@ -603,7 +684,7 @@
     <!-- Sidebar -->
     <div class="sidebar">
       <!-- Order Book -->
-      <div class="section-card fade-in" style="animation-delay:0.1s;">
+      <div class="section-card reveal" style="--d:0.1s">
         <div class="section-header">
           <div class="section-title">
             <span class="icon" style="background:var(--green-bg);color:var(--green);">📊</span>
@@ -617,7 +698,7 @@
       </div>
 
       <!-- Money Flow -->
-      <div class="section-card fade-in" style="animation-delay:0.15s;">
+      <div class="section-card reveal" style="--d:0.15s">
         <div class="section-header">
           <div class="section-title">
             <span class="icon" style="background:var(--purple-bg);color:var(--purple);">💰</span>
@@ -630,7 +711,7 @@
       </div>
 
       <!-- News -->
-      <div class="section-card fade-in" style="animation-delay:0.2s;">
+      <div class="section-card reveal" style="--d:0.2s">
         <div class="section-header">
           <div class="section-title">
             <span class="icon" style="background:var(--yellow-bg);color:var(--yellow);">📰</span>
@@ -692,9 +773,94 @@
       return apiFetch('/api/indices');
     }
 
+    // ══════════════════════════════════════════
+    //  Live Relay Engine — browser → Iranian relay → TSETMC
+    //  When a relay is configured (api/config.json), the browser polls TSETMC
+    //  directly every few seconds: true real-time data, no snapshot delay.
+    //  Any relay failure silently falls back to the proxy / static snapshot.
+    // ══════════════════════════════════════════
+    const LIVE = { relay: '', key: '', active: false };
+    const LIVE_POLL_MS = 6000;      // market watch refresh
+    const LIVE_DETAIL_MS = 8000;    // open symbol panel refresh
+    let liveDetailTimer = null;
+
+    // local /api/x  →  TSETMC upstream path (+ same response envelope as the proxy)
+    const RELAY_ROUTES = [
+      [/^\/api\/market-watch$/, () => ({
+        path: '/api/ClosingPrice/GetMarketWatch?market=0&withBestLimits=false&hEven=0&RefID=0',
+        wrap: p => ({ marketwatch: Array.isArray(p) ? p : (p && p.marketwatch) || [] }),
+      })],
+      [/^\/api\/indices$/, () => ({
+        path: '/api/Index/GetIndexB1LastAll/SelectedIndexes/1',
+        wrap: p => ({
+          indices: (Array.isArray(p) ? p : []).map(x => ({
+            insCode: x.insCode, name: x.lVal30, value: x.xDrNivJIdx004,
+            changeAbs: x.indexChange, changePct: x.xVarIdxJRfV, time: x.hEven,
+          })),
+        }),
+      })],
+      [/^\/api\/quote\/([^/]+)$/, m => ({ path: `/api/ClosingPrice/GetClosingPriceInfo/${m[1]}`, wrap: p => ({ closingPriceInfo: p }) })],
+      [/^\/api\/orderbook\/([^/]+)$/, m => ({ path: `/api/BestLimits/${m[1]}`, wrap: p => ({ bestLimits: p }) })],
+      [/^\/api\/client-type\/([^/]+)$/, m => ({ path: `/api/ClientType/GetClientType/${m[1]}/1/0`, wrap: p => ({ clientType: p }) })],
+      [/^\/api\/daily\/([^/]+)\/(\d+)$/, m => ({ path: `/api/ClosingPrice/GetClosingPriceDailyList/${m[1]}/${m[2]}`, wrap: p => ({ closingPriceDaily: p }) })],
+      [/^\/api\/search\/(.+)$/, m => ({ path: `/api/Instrument/GetInstrumentSearch/${m[1]}`, wrap: p => ({ instrumentSearch: p }) })],
+      [/^\/api\/news$/, () => ({ path: '/api/Codal/GetPreparedData/15', wrap: p => ({ preparedData: p }) })],
+    ];
+
+    function matchRelay(path) {
+      for (const [re, build] of RELAY_ROUTES) {
+        const m = path.match(re);
+        if (m) return build(m);
+      }
+      return null;
+    }
+
+    async function relayFetch(path) {
+      const route = matchRelay(path);
+      if (!route) throw new Error('no relay route');
+      let url = LIVE.relay.replace(/\/+$/, '') + route.path;
+      if (LIVE.key) url += (url.indexOf('?') === -1 ? '?' : '&') + 'key=' + encodeURIComponent(LIVE.key);
+      const ctl = new AbortController();
+      const to = setTimeout(() => ctl.abort(), 7000);
+      let res;
+      try {
+        res = await fetch(url, { cache: 'no-store', signal: ctl.signal });
+      } finally {
+        clearTimeout(to);
+      }
+      if (!res.ok) throw new Error('relay ' + res.status);
+      const payload = await res.json();
+      const out = route.wrap(payload);
+      out.meta = { source: 'live', mode: 'relay', ts: Date.now() };
+      return out;
+    }
+
+    // Ask the build/server whether a live relay is configured.
+    // Static hosting: api/config.json — Node proxy: /api/config.
+    async function loadLiveConfig() {
+      for (const u of ['api/config.json', '/api/config']) {
+        try {
+          const r = await fetch(u, { cache: 'no-store' });
+          if (!r.ok) continue;
+          const cfg = await r.json();
+          if (cfg && cfg.relay) {
+            LIVE.relay = cfg.relay;
+            LIVE.key = cfg.relayKey || '';
+            LIVE.active = true;
+            return true;
+          }
+        } catch (_) { /* try next source */ }
+      }
+      return false;
+    }
+
     // ── API Calls ──
     async function apiFetch(path) {
-      // Node proxy serves /api/x — static hosting (GitHub Pages) serves api/x.json
+      // 1) Live relay (real-time) — falls through on any failure
+      if (LIVE.active) {
+        try { return await relayFetch(path); } catch (_) { /* fall back */ }
+      }
+      // 2) Node proxy serves /api/x — 3) static hosting (GitHub Pages) serves api/x.json
       const rel = path.replace(/^\/api\//, 'api/');
       let url = rel + API_SUFFIX;
       let res = await fetch(url);
@@ -723,7 +889,12 @@
       if (!badge) return;
       if (!lastMeta) { badge.style.display = 'none'; return; }
       badge.style.display = 'inline-block';
-      if (lastMeta.source === 'live') {
+      if (lastMeta.source === 'live' && lastMeta.mode === 'relay') {
+        badge.textContent = '● داده زنده لحظه‌ای (مستقیم از TSETMC)';
+        badge.style.background = 'var(--green-bg)';
+        badge.style.color = 'var(--green)';
+        badge.style.boxShadow = '0 0 0 1px var(--green)';
+      } else if (lastMeta.source === 'live') {
         badge.textContent = '● داده زنده';
         badge.style.background = 'var(--green-bg)';
         badge.style.color = 'var(--green)';
@@ -880,13 +1051,39 @@
             <span class="ic-name">${name}</span>
             <span class="ic-icon">${icon}</span>
           </div>
-          <div class="ic-value">${fmtRial(s.value)}</div>
+          <div class="ic-value" data-value="${s.value}" data-code="${s.insCode}">${fmtRial(s.value)}</div>
           <div class="ic-change">
             <span>${isUp ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%</span>
             <span style="font-size:11px;color:var(--text-muted);font-weight:400">${fmtRial(Math.abs(s.changeAbs || 0))} واحد</span>
           </div>
         </div>`;
       }).join('');
+
+      // Count-up on first paint only (repeat polls just re-render the value)
+      grid.querySelectorAll('.ic-value').forEach(el => {
+        const code = String(el.dataset.code);
+        if (countedIdx.has(code)) { el.textContent = fmtRial(parseFloat(el.dataset.value)); return; }
+        countedIdx.add(code);
+        countUp(el, parseFloat(el.dataset.value), fmtRial);
+      });
+    }
+
+    // ── Number count-up animation ──
+    const countedIdx = new Set();
+    const priceMemory = {};   // insCode → last rendered price (for flash animation)
+    function countUp(el, target, formatter) {
+      if (!isFinite(target)) { el.textContent = formatter(target); return; }
+      const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) { el.textContent = formatter(target); return; }
+      const t0 = performance.now(), dur = 750;
+      function step(t) {
+        const p = Math.min((t - t0) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = formatter(target * eased);
+        if (p < 1) requestAnimationFrame(step);
+        else el.textContent = formatter(target);
+      }
+      requestAnimationFrame(step);
     }
 
     // ── Render Stock Table ──
@@ -919,6 +1116,11 @@
         const name = s.lVal30 || sym;
         const color = colors[i % colors.length];
 
+        // Flash the price when a live poll changes it
+        const seen = priceMemory[s.insCode];
+        const flash = (seen != null && seen !== last) ? (last > seen ? 'flash-up' : 'flash-down') : '';
+        priceMemory[s.insCode] = last;
+
         return `<div class="stock-row" onclick="selectSymbol(${s.insCode})">
           <div class="stock-name-cell">
             <div class="stock-avatar ${color}">${sym.charAt(0)}</div>
@@ -927,7 +1129,7 @@
               <div class="stock-ticker">${sym}</div>
             </div>
           </div>
-          <div class="stock-price">${fmtRial(last)}</div>
+          <div class="stock-price"><span class="${flash}">${fmtRial(last)}</span></div>
           <div class="stock-change-badge ${isUp ? 'up' : 'down'}">${isUp ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%</div>
           <div class="stock-cell">${fmtVolume(s.qTotTran5J)}</div>
           <div><canvas class="stock-mini-chart" width="80" height="28" data-last="${last}" data-prev="${prev}"></canvas></div>
@@ -975,11 +1177,11 @@
     }
 
     // ── Select Symbol ──
-    async function selectSymbol(insCode) {
+    async function selectSymbol(insCode, silent) {
       selectedInsCode = insCode;
       const detail = document.getElementById('symbolDetail');
       detail.classList.add('active');
-      detail.innerHTML = '<div class="loading-shimmer" style="height:200px;"></div>';
+      if (!silent) detail.innerHTML = '<div class="loading-shimmer" style="height:200px;"></div>';
 
       try {
         const [quoteData, orderData, clientData, dailyData] = await Promise.all([
@@ -1360,6 +1562,10 @@
         setStatus('connected', `✅ متصل (داده ${srcLabel}) — ${fmt(symbols.length)} نماد بارگذاری شد`);
         if (lastMeta && lastMeta.source === 'seed') { setStatus('connected', 'حالت نمایشی (دمو) — داده‌های نمونه به‌جای داده زنده نمایش داده می‌شود'); } if (lastMeta && lastMeta.source === 'live-snapshot') { setStatus('connected', '✅ متصل — داده واقعی بورس (اسنپ‌شات ۱۵ دقیقه‌ای)'); } // SNAPSHOT_LABEL
         // DEMO_STATUS_OVERRIDE
+        // Live relay wins the status line: real-time, no snapshot delay
+        if (LIVE.active && lastMeta && lastMeta.mode === 'relay') {
+          setStatus('connected', '🟢 داده زنده لحظه‌ای — ' + fmt(symbols.length) + ' نماد (به‌روزرسانی هر ' + (LIVE_POLL_MS / 1000) + ' ثانیه)');
+        }
         const when = lastMeta && lastMeta.ts ? new Date(lastMeta.ts).toLocaleTimeString('fa-IR') : new Date().toLocaleTimeString('fa-IR');
         document.getElementById('lastUpdate').textContent = `آخرین به‌روزرسانی: ${when}`;
         updateSourceBadge();
@@ -1382,14 +1588,61 @@
       }
     }
 
-    function init() {
+    // ── Scroll reveal (IntersectionObserver) ──
+    function initReveal() {
+      const els = document.querySelectorAll('.reveal');
+      if (!('IntersectionObserver' in window)) {
+        els.forEach(el => el.classList.add('in-view'));
+        return;
+      }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) { e.target.classList.add('in-view'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.06, rootMargin: '0px 0px -40px 0px' });
+      els.forEach(el => io.observe(el));
+    }
+
+    // Re-render the open symbol panel without the shimmer (live polling)
+    function refreshDetail(insCode) {
+      if (!insCode) return;
+      const el = document.getElementById('symbolDetail');
+      if (!el || !el.classList.contains('active')) return;
+      selectSymbol(insCode, true);
+    }
+
+    async function init() {
       updateClock();
       setInterval(updateClock, 1000);
-      loadMarketData();
+      initReveal();
+
+      // Detect a live relay (turns the page real-time instead of snapshot-fed)
+      const hasRelay = await loadLiveConfig();
+
+      await loadMarketData();
       loadNews();
-      // Auto-refresh every 60 seconds
-      refreshInterval = setInterval(loadMarketData, 60000);
-      setInterval(loadNews, 300000);
+
+      // Live relay → poll every few seconds; otherwise refresh the snapshot feed
+      const period = hasRelay ? LIVE_POLL_MS : 60000;
+      refreshInterval = setInterval(() => {
+        if (!document.hidden) loadMarketData();
+      }, period);
+      setInterval(() => {
+        if (!document.hidden) loadNews();
+      }, 300000);
+
+      // Keep an open symbol panel live too
+      if (hasRelay) {
+        clearInterval(liveDetailTimer);
+        liveDetailTimer = setInterval(() => {
+          if (!document.hidden && selectedInsCode) refreshDetail(selectedInsCode);
+        }, LIVE_DETAIL_MS);
+      }
+
+      // Instant refresh when the tab regains focus
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) { loadMarketData(); refreshDetail(selectedInsCode); }
+      });
     }
 
     document.addEventListener('DOMContentLoaded', init);
