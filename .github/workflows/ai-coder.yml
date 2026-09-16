@@ -20,8 +20,8 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Google GenAI SDK
-        run: pip install google-genai
+      - name: Install Google Generative AI SDK
+        run: pip install google-generativeai
 
       - name: Apply Changes with Gemini
         env:
@@ -32,14 +32,13 @@ jobs:
           python - << 'EOF'
           import os
           import json
-          from google import genai
-          from google.genai import types
+          import re
+          import google.generativeai as genai
 
           api_key = os.environ.get("GEMINI_API_KEY")
           title = os.environ.get("ISSUE_TITLE", "")
           body = os.environ.get("ISSUE_BODY", "")
 
-          # جمع‌آوری فایل‌های متنی پروژه
           allowed_exts = ('.html', '.css', '.js', '.json', '.md', '.py', '.txt')
           files_context = {}
 
@@ -57,37 +56,35 @@ jobs:
 
           prompt = f"""
           You are an automated software engineer.
-          The user requested the following change via a GitHub issue:
-          Title: {title}
+          Request Title: {title}
           Details: {body}
 
-          Here are the relevant existing project files:
+          Existing files:
           {json.dumps(files_context, ensure_ascii=False)}
 
-          Provide the updated contents for any files that need modification, or new files that need to be created.
-          Return ONLY a valid JSON object where keys are the relative file paths and values are the complete updated file content as a string.
-          Do NOT wrap the response in markdown code blocks like ```json. Return raw JSON only.
+          Return ONLY a valid JSON object where keys are relative file paths and values are the updated file content.
+          Do NOT add markdown formatting. Raw JSON only.
           """
 
-          client = genai.Client(api_key=api_key)
-          response = client.models.generate_content(
-              model="gemini-3",
-              contents=prompt,
-              config=types.GenerateContentConfig(
-                  response_mime_type="application/json"
-              )
-          )
+          genai.configure(api_key=api_key)
+          model = genai.GenerativeModel('gemini-1.5-flash')
+          response = model.generate_content(prompt)
+
+          text = response.text.strip()
+          text = re.sub(r'^```json\s*', '', text)
+          text = re.sub(r'\s*```$', '', text)
 
           try:
-              changes = json.loads(response.text)
+              changes = json.loads(text)
               for path, content in changes.items():
                   os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
                   with open(path, 'w', encoding='utf-8') as f:
                       f.write(content)
                   print(f"Updated: {path}")
           except Exception as e:
-              print(f"Failed to parse or apply changes: {e}")
-              print("Raw response was:", response.text)
+              print(f"Failed to parse JSON: {e}")
+              print("Response was:", text)
+              exit(1)
           EOF
 
       - name: Commit and Push
