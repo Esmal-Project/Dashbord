@@ -1,0 +1,98 @@
+name: AI Coder
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  modify-code:
+    if: startsWith(github.event.issue.title, 'ai:')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Google GenAI SDK
+        run: pip install google-genai
+
+      - name: Apply Changes with Gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          python - << 'EOF'
+          import os
+          import json
+          from google import genai
+          from google.genai import types
+
+          api_key = os.environ.get("GEMINI_API_KEY")
+          title = os.environ.get("ISSUE_TITLE", "")
+          body = os.environ.get("ISSUE_BODY", "")
+
+          # جمع‌آوری فایل‌های متنی پروژه
+          allowed_exts = ('.html', '.css', '.js', '.json', '.md', '.py', '.txt')
+          files_context = {}
+
+          for root, dirs, files in os.walk('.'):
+              if '.git' in root or '.github' in root:
+                  continue
+              for file in files:
+                  if file.endswith(allowed_exts):
+                      filepath = os.path.relpath(os.path.join(root, file), '.')
+                      try:
+                          with open(filepath, 'r', encoding='utf-8') as f:
+                              files_context[filepath] = f.read()
+                      except Exception:
+                          pass
+
+          prompt = f"""
+          You are an automated software engineer.
+          The user requested the following change via a GitHub issue:
+          Title: {title}
+          Details: {body}
+
+          Here are the relevant existing project files:
+          {json.dumps(files_context, ensure_ascii=False)}
+
+          Provide the updated contents for any files that need modification, or new files that need to be created.
+          Return ONLY a valid JSON object where keys are the relative file paths and values are the complete updated file content as a string.
+          Do NOT wrap the response in markdown code blocks like ```json. Return raw JSON only.
+          """
+
+          client = genai.Client(api_key=api_key)
+          response = client.models.generate_content(
+              model="gemini-2.5-flash",
+              contents=prompt,
+              config=types.GenerateContentConfig(
+                  response_mime_type="application/json"
+              )
+          )
+
+          try:
+              changes = json.loads(response.text)
+              for path, content in changes.items():
+                  os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
+                  with open(path, 'w', encoding='utf-8') as f:
+                      f.write(content)
+                  print(f"Updated: {path}")
+          except Exception as e:
+              print(f"Failed to parse or apply changes: {e}")
+              print("Raw response was:", response.text)
+          EOF
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "Gemini Bot"
+          git config --global user.email "gemini-bot@users.noreply.github.com"
+          git add -A
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto update via Issue: ${{ github.event.issue.title }}" && git push)
