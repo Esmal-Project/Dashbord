@@ -64,29 +64,32 @@ jobs:
           Existing files:
           {json.dumps(files_context, ensure_ascii=False)}
 
-          Return ONLY a valid JSON object where keys are relative file paths and values are the updated file content.
-          Do NOT add markdown formatting like ```json. Raw JSON only.
+          Return ONLY a valid JSON object where keys are relative file paths and values are the complete updated file contents.
+          Do not include conversational text or markdown blocks outside the JSON.
           """
 
-          # استفاده مستقیم از مدلی که در لاگ درخواست شده
           model = genai.GenerativeModel('models/gemini-3.6-flash')
           response = model.generate_content(prompt)
 
           text = response.text.strip()
-          text = re.sub(r'^```json\s*', '', text)
-          text = re.sub(r'\s*```$', '', text)
-
-          try:
-              changes = json.loads(text)
-              for path, content in changes.items():
-                  os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
-                  with open(path, 'w', encoding='utf-8') as f:
-                      f.write(content)
-                  print(f"Updated: {path}")
-          except Exception as e:
-              print(f"Failed to parse JSON: {e}")
-              print("Response was:", text)
-              exit(1)
+          # پاکسازی مارک‌داون
+          match = re.search(r'\{.*\}', text, re.DOTALL)
+          if match:
+              clean_json = match.group(0)
+              try:
+                  changes = json.loads(clean_json)
+                  for path, content in changes.items():
+                      os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
+                      with open(path, 'w', encoding='utf-8') as f:
+                          f.write(content)
+                      print(f"Updated successfully: {path}")
+              except Exception as e:
+                  print(f"JSON decode failed: {e}")
+                  # در صورتی که ساختار تک فایلی بود مستقیماً روی index.html اعمال شود
+                  if "index.html" in files_context:
+                      with open("index.html", "w", encoding="utf-8") as f:
+                          f.write(clean_json)
+                      print("Fallback applied directly.")
           EOF
 
       - name: Commit and Push
