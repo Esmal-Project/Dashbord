@@ -39,6 +39,22 @@ jobs:
           title = os.environ.get("ISSUE_TITLE", "")
           body = os.environ.get("ISSUE_BODY", "")
 
+          genai.configure(api_key=api_key)
+
+          # پیدا کردن اولین مدل در دسترس برای اکانت
+          selected_model = None
+          for m in genai.list_models():
+              if 'generateContent' in m.supported_generation_methods:
+                  selected_model = m.name
+                  if 'flash' in m.name:
+                      break
+
+          if not selected_model:
+              print("No usable model found for this API key.")
+              exit(1)
+
+          print(f"Using model: {selected_model}")
+
           allowed_exts = ('.html', '.css', '.js', '.json', '.md', '.py', '.txt')
           files_context = {}
 
@@ -63,11 +79,10 @@ jobs:
           {json.dumps(files_context, ensure_ascii=False)}
 
           Return ONLY a valid JSON object where keys are relative file paths and values are the updated file content.
-          Do NOT add markdown formatting. Raw JSON only.
+          Do NOT add markdown formatting like ```json. Raw JSON only.
           """
 
-          genai.configure(api_key=api_key)
-          model = genai.GenerativeModel('gemini-1.5-flash')
+          model = genai.GenerativeModel(selected_model)
           response = model.generate_content(prompt)
 
           text = response.text.strip()
