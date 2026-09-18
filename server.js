@@ -434,7 +434,7 @@ function relayConfig() {
   } catch (_) { /* optional file */ }
   const relay = (process.env.TSETMC_RELAY || file.relay || '').trim().replace(/\/$/, '');
   const relayKey = (process.env.PUBLIC_RELAY_KEY || file.relayKey || '').trim();
-  if (!relay || relay.startsWith('https://cdn.tsetmc.com')) return { relay: '', relayKey: '' };
+  if (!relay) return { relay: '', relayKey: '' };
   return { relay, relayKey };
 }
 
