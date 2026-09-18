@@ -118,7 +118,7 @@ function buildApi() {
   const fileCfg = readRelayConfigFile();
   const relay = (process.env.TSETMC_RELAY || fileCfg.relay || '').trim().replace(/\/$/, '');
   const relayKey = (process.env.PUBLIC_RELAY_KEY || fileCfg.relayKey || '').trim();
-  if (relay && !relay.startsWith('https://cdn.tsetmc.com')) {
+  if (relay) {
     writeJson('api/config.json', { relay, relayKey });
   } else {
     writeJson('api/config.json', { relay: '', relayKey: '' });
