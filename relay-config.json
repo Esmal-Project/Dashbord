@@ -1,5 +1,5 @@
 {
   "_howto": "برای فعال کردن داده زنده لحظه‌ای، مقدار relay را به آدرس رله ایرانی خود تغییر دهید (مثلاً https://example.ir/relay یا https://relay.example.ir) و سپس کامیت کنید. اگر روی رله RELAY_SECRET گذاشته‌اید، همان مقدار را در relayKey بگذارید. خالی بودن relayKey یعنی رله بدون توکن است.",
-  "relay": "https://tsetmce.yasharesmaeili.workers.dev",
+  "relay": "",
   "relayKey": ""
 }
