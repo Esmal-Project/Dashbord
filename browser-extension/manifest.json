@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Bourse Mag CORS Helper",
+  "version": "1.0",
+  "description": "Bypasses CORS restrictions for connecting directly to TSETMC api.",
+  "permissions": [
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "*://*.tsetmc.com/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  }
+}

@@ -1,3 +1,0 @@
-name = "dashbord"
-main = "cloudflare-worker.js"
-compatibility_date = "2024-03-20"
