@@ -4,7 +4,8 @@
   "version": "1.0",
   "description": "Bypasses CORS restrictions for connecting directly to TSETMC api.",
   "permissions": [
-    "declarativeNetRequest"
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
     "*://*.tsetmc.com/*"

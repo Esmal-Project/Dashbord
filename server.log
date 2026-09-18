@@ -1,0 +1,6 @@
+
+> bourse-mag@1.0.0 start
+> node server.js
+
+BourseMag server listening on http://0.0.0.0:3000
+Terminated

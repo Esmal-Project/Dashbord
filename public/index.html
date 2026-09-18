@@ -859,7 +859,13 @@
     async function apiFetch(path) {
       // 1) Live relay (real-time) — falls through on any failure
       if (LIVE.active) {
-        try { return await relayFetch(path); } catch (_) { /* fall back */ }
+        try {
+          const ret = await relayFetch(path);
+          return ret;
+        } catch (e) {
+          console.error("Relay fetch failed:", e);
+          /* fall back */
+        }
       }
       // 2) Node proxy serves /api/x — 3) static hosting (GitHub Pages) serves api/x.json
       const rel = path.replace(/^\/api\//, 'api/');
