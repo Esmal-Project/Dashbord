@@ -947,81 +947,9 @@
       return apiFetch(`/api/search/${encodeURIComponent(query)}`);
     }
 
-   const BRSAPI_WORKER = 'https://brsapi-proxy.yasharesmaeili.workers.dev';
-
-async function fetchBRSHistory(symbol) {
-  const url = `${BRSAPI_WORKER}/tsetmc/history?symbol=${encodeURIComponent(symbol)}`;
-
-  const response = await fetch(url, {
-    method: 'GET',
-    cache: 'no-store'
-  });
-
-  if (!response.ok) {
-    throw new Error(`BRSAPI Worker HTTP ${response.status}`);
-  }
-
-  const data = await response.json();
-
-  if (!Array.isArray(data)) {
-    throw new Error('BRSAPI history response is not an array');
-  }
-
-  return data;
-}
-
-async function fetchDailyHistory(insCode) {
-  try {
-    // پیدا کردن نماد متناظر با InsCode
-    const symbolInfo = (allSymbols || []).find(s =>
-      String(s.insCode || s.inscode || s.InsCode || '') === String(insCode)
-    );
-
-    const symbol =
-      symbolInfo?.symbol ||
-      symbolInfo?.l18 ||
-      symbolInfo?.L18 ||
-      symbolInfo?.symbolName ||
-      '';
-
-    if (!symbol) {
-      console.warn('BRSAPI: symbol not found for InsCode:', insCode);
+    async function fetchDailyHistory(insCode) {
       return apiFetch(`/api/daily/${insCode}/30`);
     }
-
-    const rows = await fetchBRSHistory(symbol);
-
-    // تبدیل ساختار BRSAPI به ساختار مورد انتظار سایت
-    const transformed = rows.map(row => ({
-      dEven: String(row.date || '').replace(/-/g, ''),
-      pClosing: Number(row.pc || 0),
-      pDrCotVal: Number(row.pl || 0),
-      priceMin: Number(row.pmin || 0),
-      priceMax: Number(row.pmax || 0),
-      priceYesterday: Number(row.py || 0),
-      priceFirst: Number(row.pf || 0),
-      qTotTran5J: Number(row.tvol || 0),
-      qTotCap: Number(row.tval || 0),
-      zTotTran: Number(row.tno || 0)
-    }));
-
-    return {
-      closingPriceDaily: transformed,
-      meta: {
-        source: 'brsapi',
-        mode: 'history',
-        symbol,
-        ts: Date.now()
-      }
-    };
-
-  } catch (error) {
-    console.warn('BRSAPI history failed, falling back to existing API:', error);
-
-    // اگر BRSAPI خراب بود، سیستم قبلی سایت همچنان کار کند
-    return apiFetch(`/api/daily/${insCode}/30`);
-  }
-}
 
     // ── Helpers ──
     function fmt(n) {
